@@ -1,16 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
-import { Cart } from "@/components/Cart";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { Search, Plus, X, TrendingDown } from "lucide-react";
+import { searchProducts, ProductPrice, getProductByName } from "@/data/mockProducts";
 import isayvLogo from "@/assets/logo.png";
+
+interface CartItem {
+  id: string;
+  product_name: string;
+  quantity: number;
+}
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<ProductPrice[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isComparing, setIsComparing] = useState(false);
   const navigate = useNavigate();
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -20,6 +34,7 @@ const Dashboard = () => {
     };
 
     checkUser();
+    loadCart();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
@@ -28,11 +43,158 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const results = searchProducts(searchQuery);
+      setSearchResults(results);
+      setShowDropdown(results.length > 0);
+    } else {
+      setSearchResults([]);
+      setShowDropdown(false);
+    }
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const loadCart = async () => {
+    const userId = user?.id || "demo-user";
+    const { data, error } = await supabase
+      .from("cart_items")
+      .select("*")
+      .eq("user_id", userId);
+
+    if (error) {
+      console.error("Error loading cart:", error);
+      return;
+    }
+
+    if (data) {
+      const items: CartItem[] = data.map((item) => ({
+        id: item.id,
+        product_name: item.custom_item_name || "",
+        quantity: item.quantity,
+      }));
+      setCartItems(items);
+    }
+  };
+
+  const addToCart = async (product: ProductPrice) => {
+    const userId = user?.id || "demo-user";
+    
+    // Check if item already exists in cart
+    const existingItem = cartItems.find(
+      (item) => item.product_name === product.name
+    );
+
+    if (existingItem) {
+      // Update quantity
+      const { error } = await supabase
+        .from("cart_items")
+        .update({ quantity: existingItem.quantity + 1 })
+        .eq("id", existingItem.id);
+
+      if (error) {
+        toast.error("Failed to update cart");
+        return;
+      }
+
+      toast.success(`Added another ${product.name} to cart`);
+    } else {
+      // Add new item
+      const { error } = await supabase
+        .from("cart_items")
+        .insert({
+          user_id: userId,
+          custom_item_name: product.name,
+          quantity: 1,
+        });
+
+      if (error) {
+        toast.error("Failed to add to cart");
+        return;
+      }
+
+      toast.success(`${product.name} added to cart`);
+    }
+
+    loadCart();
+    setSearchQuery("");
+    setShowDropdown(false);
+  };
+
+  const removeFromCart = async (itemId: string) => {
+    const { error } = await supabase
+      .from("cart_items")
+      .delete()
+      .eq("id", itemId);
+
+    if (error) {
+      toast.error("Failed to remove item");
+      return;
+    }
+
+    toast.success("Item removed from cart");
+    loadCart();
+  };
+
+  const updateQuantity = async (itemId: string, newQuantity: number) => {
+    if (newQuantity < 1) {
+      removeFromCart(itemId);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("cart_items")
+      .update({ quantity: newQuantity })
+      .eq("id", itemId);
+
+    if (error) {
+      toast.error("Failed to update quantity");
+      return;
+    }
+
+    loadCart();
+  };
+
+  const calculateTotals = () => {
+    let walmartTotal = 0;
+    let krogerTotal = 0;
+
+    cartItems.forEach((item) => {
+      const product = getProductByName(item.product_name);
+      if (product) {
+        walmartTotal += product.walmart * item.quantity;
+        krogerTotal += product.kroger * item.quantity;
+      }
+    });
+
+    return { walmartTotal, krogerTotal };
+  };
+
+  const getCheapestStore = () => {
+    const { walmartTotal, krogerTotal } = calculateTotals();
+    if (walmartTotal === 0 && krogerTotal === 0) return null;
+    return walmartTotal < krogerTotal ? "walmart" : "kroger";
+  };
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     toast.success("Signed out successfully");
     navigate("/");
   };
+
+  const { walmartTotal, krogerTotal } = calculateTotals();
+  const cheapestStore = getCheapestStore();
+  const savings = Math.abs(walmartTotal - krogerTotal);
 
   if (loading) {
     return (
@@ -68,8 +230,154 @@ const Dashboard = () => {
           </div>
         </div>
       </header>
-      <main className="container mx-auto px-4 py-8">
-        <Cart userId={user?.id || "demo-user"} />
+      <main className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Search and Results Section */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+              <h2 className="text-2xl font-bold mb-4">Search Products</h2>
+              
+              <div className="relative" ref={dropdownRef}>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search for products (e.g., Coke 1L, Milk, Bread...)"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
+                    className="pl-10 h-12"
+                  />
+                </div>
+
+                {showDropdown && searchResults.length > 0 && (
+                  <div className="absolute w-full mt-2 bg-card border border-border rounded-lg shadow-lg max-h-96 overflow-y-auto z-50 animate-fade-in">
+                    {searchResults.map((product, index) => (
+                      <div
+                        key={index}
+                        className="px-4 py-3 border-b border-border last:border-b-0 hover:bg-accent transition-colors flex items-center justify-between group"
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium">{product.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Walmart: ${product.walmart.toFixed(2)} | Kroger: ${product.kroger.toFixed(2)}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => addToCart(product)}
+                          className="ml-4"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Cart Section */}
+          <div className="lg:col-span-1">
+            <div className="bg-card border border-border rounded-xl shadow-sm sticky top-24">
+              <div className="p-6 border-b border-border">
+                <h2 className="text-2xl font-bold">My Cart</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {cartItems.length} {cartItems.length === 1 ? "item" : "items"}
+                </p>
+              </div>
+
+              {/* Scrollable Cart Items */}
+              <div className="max-h-96 overflow-y-auto p-6 space-y-3">
+                {cartItems.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>Your cart is empty</p>
+                    <p className="text-sm mt-2">Search and add products above</p>
+                  </div>
+                ) : (
+                  cartItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-3 p-3 bg-background rounded-lg border border-border"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{item.product_name}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 w-6 p-0"
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          >
+                            -
+                          </Button>
+                          <span className="text-sm font-medium w-8 text-center">
+                            {item.quantity}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 w-6 p-0"
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          >
+                            +
+                          </Button>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => removeFromCart(item.id)}
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Comparison Section */}
+              {cartItems.length > 0 && (
+                <div className="p-6 border-t border-border space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-[#0071ce]/10 rounded-lg">
+                      <span className="font-semibold text-[#0071ce]">Walmart</span>
+                      <span className="text-lg font-bold">
+                        ${walmartTotal.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-[#003da5]/10 rounded-lg">
+                      <span className="font-semibold text-[#003da5]">Kroger</span>
+                      <span className="text-lg font-bold">
+                        ${krogerTotal.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {savings > 0 && (
+                    <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 flex items-center gap-2 text-primary text-sm">
+                      <TrendingDown className="h-4 w-4 flex-shrink-0" />
+                      <span className="font-semibold">
+                        Save ${savings.toFixed(2)} at {cheapestStore === "walmart" ? "Walmart" : "Kroger"}!
+                      </span>
+                    </div>
+                  )}
+
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    onClick={() => setIsComparing(!isComparing)}
+                  >
+                    {isComparing ? "Hide" : "Show"} Comparison
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   );

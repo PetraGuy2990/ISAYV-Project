@@ -75,18 +75,18 @@ const Hero = () => {
           <div className="flex gap-4 mt-8 justify-center">
             <Button
               size="lg"
-              onClick={() => navigate("/search")}
+              onClick={() => navigate("/dashboard")}
               className="px-8 shadow-glow"
             >
-              Compare Prices Now
+              Start Comparing Prices
             </Button>
             <Button
               variant="outline"
               size="lg"
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate("/auth")}
               className="px-8"
             >
-              View My Cart
+              Sign In
             </Button>
           </div>
         </div>
