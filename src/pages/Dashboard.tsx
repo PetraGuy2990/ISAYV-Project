@@ -31,17 +31,29 @@ const Dashboard = () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Load cart if user is authenticated
+      if (session?.user) {
+        loadCart();
+      }
     };
 
     checkUser();
-    loadCart();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      
+      // Load cart when user logs in
+      if (session?.user) {
+        loadCart();
+      } else {
+        // Clear cart when user logs out
+        setCartItems([]);
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
     if (searchQuery.trim()) {
@@ -66,11 +78,16 @@ const Dashboard = () => {
   }, []);
 
   const loadCart = async () => {
-    const userId = user?.id || "demo-user";
+    // Only load from database if user is authenticated
+    if (!user) {
+      // For demo users, cart stays in local state only
+      return;
+    }
+
     const { data, error } = await supabase
       .from("cart_items")
       .select("*")
-      .eq("user_id", userId);
+      .eq("user_id", user.id);
 
     if (error) {
       console.error("Error loading cart:", error);
@@ -88,15 +105,35 @@ const Dashboard = () => {
   };
 
   const addToCart = async (product: ProductPrice) => {
-    const userId = user?.id || "demo-user";
-    
     // Check if item already exists in cart
     const existingItem = cartItems.find(
       (item) => item.product_name === product.name
     );
 
+    if (!user) {
+      // Demo mode: use local state only
+      if (existingItem) {
+        setCartItems(cartItems.map(item => 
+          item.product_name === product.name 
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        ));
+        toast.success(`Added another ${product.name} to cart`);
+      } else {
+        setCartItems([...cartItems, {
+          id: `demo-${Date.now()}`,
+          product_name: product.name,
+          quantity: 1,
+        }]);
+        toast.success(`${product.name} added to cart`);
+      }
+      setSearchQuery("");
+      setShowDropdown(false);
+      return;
+    }
+
+    // Authenticated mode: save to database
     if (existingItem) {
-      // Update quantity
       const { error } = await supabase
         .from("cart_items")
         .update({ quantity: existingItem.quantity + 1 })
@@ -109,11 +146,10 @@ const Dashboard = () => {
 
       toast.success(`Added another ${product.name} to cart`);
     } else {
-      // Add new item
       const { error } = await supabase
         .from("cart_items")
         .insert({
-          user_id: userId,
+          user_id: user.id,
           custom_item_name: product.name,
           quantity: 1,
         });
@@ -132,6 +168,14 @@ const Dashboard = () => {
   };
 
   const removeFromCart = async (itemId: string) => {
+    if (!user) {
+      // Demo mode: update local state only
+      setCartItems(cartItems.filter(item => item.id !== itemId));
+      toast.success("Item removed from cart");
+      return;
+    }
+
+    // Authenticated mode: remove from database
     const { error } = await supabase
       .from("cart_items")
       .delete()
@@ -152,6 +196,15 @@ const Dashboard = () => {
       return;
     }
 
+    if (!user) {
+      // Demo mode: update local state only
+      setCartItems(cartItems.map(item =>
+        item.id === itemId ? { ...item, quantity: newQuantity } : item
+      ));
+      return;
+    }
+
+    // Authenticated mode: update database
     const { error } = await supabase
       .from("cart_items")
       .update({ quantity: newQuantity })
