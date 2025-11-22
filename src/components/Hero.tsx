@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { toast } from "sonner";
-import isayvLogo from "@/assets/isayv-logo.jpg";
+import isayvLogo from "@/assets/logo.png";
 
 const Hero = () => {
   const [email, setEmail] = useState("");
