@@ -7,7 +7,7 @@ const Footer = () => {
             isayv
           </p>
           <p className="text-muted-foreground">
-            Building the future of AI, one innovation at a time.
+            Saving you money on groceries, one basket at a time.
           </p>
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} isayv. All rights reserved.

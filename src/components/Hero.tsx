@@ -37,12 +37,12 @@ const Hero = () => {
           {/* Hero heading */}
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Welcome to isayv
+              Your All-in-One Grocery Experience
             </span>
           </h1>
 
           <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Experience the future of AI-powered innovation. Join our exclusive beta program and be among the first to transform your workflow.
+            Save money on every grocery trip. Compare prices across retailers, find the best deals, and earn rewards—all in one place.
           </p>
 
           {/* Email signup form */}

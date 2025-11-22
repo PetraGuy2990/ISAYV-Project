@@ -1,20 +1,25 @@
-import { Zap, Shield, Sparkles } from "lucide-react";
+import { ShoppingBasket, Search, ShoppingCart, Gift } from "lucide-react";
 
 const features = [
   {
-    icon: Zap,
-    title: "Lightning Fast",
-    description: "Process complex queries in milliseconds with our cutting-edge AI infrastructure. Experience unprecedented speed and efficiency."
+    icon: ShoppingBasket,
+    title: "Smart Basket Selection",
+    description: "Upload a photo, select items, or type your grocery list. Our AI recognizes your items instantly for quick comparison."
   },
   {
-    icon: Shield,
-    title: "Secure & Private",
-    description: "Your data is encrypted end-to-end. We prioritize your privacy with industry-leading security protocols and compliance."
+    icon: Search,
+    title: "Intelligent Price Comparison",
+    description: "Compare prices across multiple retailers based on location, stock availability, and total basket cost. Digital coupons automatically applied."
   },
   {
-    icon: Sparkles,
-    title: "Intelligent Insights",
-    description: "Get actionable insights powered by advanced machine learning. Make data-driven decisions with confidence."
+    icon: ShoppingCart,
+    title: "Seamless Ordering",
+    description: "Order directly from your chosen retailer with options for curbside pickup, click & collect, or home delivery."
+  },
+  {
+    icon: Gift,
+    title: "Rewards & Loyalty",
+    description: "Track your purchases and earn loyalty points with every order. Save more with our integrated rewards program."
   }
 ];
 
@@ -24,14 +29,14 @@ const Features = () => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16 animate-fade-up">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Powered by Innovation
+            How It Works
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Built with cutting-edge technology to deliver exceptional results
+            Four simple steps to smarter grocery shopping and big savings
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
           {features.map((feature, index) => (
             <div
               key={index}
