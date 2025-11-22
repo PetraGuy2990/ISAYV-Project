@@ -15,11 +15,7 @@ const Dashboard = () => {
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/auth");
-        return;
-      }
-      setUser(session.user);
+      setUser(session?.user ?? null);
       setLoading(false);
     };
 
@@ -27,9 +23,6 @@ const Dashboard = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
-      if (!session) {
-        navigate("/auth");
-      }
     });
 
     return () => subscription.unsubscribe();
@@ -63,14 +56,20 @@ const Dashboard = () => {
             <Button variant="ghost" onClick={() => navigate("/account")}>
               My Account
             </Button>
-            <Button variant="outline" onClick={handleSignOut}>
-              Sign Out
-            </Button>
+            {user ? (
+              <Button variant="outline" onClick={handleSignOut}>
+                Sign Out
+              </Button>
+            ) : (
+              <Button variant="outline" onClick={() => navigate("/auth")}>
+                Sign In
+              </Button>
+            )}
           </div>
         </div>
       </header>
       <main className="container mx-auto px-4 py-8">
-        <Cart userId={user?.id || ""} />
+        <Cart userId={user?.id || "demo-user"} />
       </main>
     </div>
   );

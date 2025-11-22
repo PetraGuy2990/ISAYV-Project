@@ -24,11 +24,11 @@ const Account = () => {
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/auth");
-        return;
+      if (session) {
+        loadPurchaseHistory(session.user.id);
+      } else {
+        setLoading(false);
       }
-      loadPurchaseHistory(session.user.id);
     };
     checkUser();
   }, [navigate]);
@@ -69,9 +69,17 @@ const Account = () => {
               My Account
             </h1>
           </div>
-          <Button variant="outline" onClick={handleSignOut}>
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-4">
+            {purchases.length > 0 ? (
+              <Button variant="outline" onClick={handleSignOut}>
+                Sign Out
+              </Button>
+            ) : (
+              <Button variant="outline" onClick={() => navigate("/auth")}>
+                Sign In
+              </Button>
+            )}
+          </div>
         </div>
       </header>
       <main className="container mx-auto px-4 py-8 space-y-8">
