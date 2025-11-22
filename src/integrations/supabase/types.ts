@@ -14,7 +14,131 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cart_items: {
+        Row: {
+          created_at: string
+          custom_item_name: string | null
+          grocery_item_id: string | null
+          id: string
+          quantity: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          custom_item_name?: string | null
+          grocery_item_id?: string | null
+          id?: string
+          quantity?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          custom_item_name?: string | null
+          grocery_item_id?: string | null
+          id?: string
+          quantity?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_grocery_item_id_fkey"
+            columns: ["grocery_item_id"]
+            isOneToOne: false
+            referencedRelation: "grocery_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grocery_items: {
+        Row: {
+          brand: string | null
+          category: string | null
+          company: string | null
+          created_at: string
+          deal: string | null
+          id: string
+          item_name: string
+          location: string | null
+          price: number | null
+          size: string | null
+        }
+        Insert: {
+          brand?: string | null
+          category?: string | null
+          company?: string | null
+          created_at?: string
+          deal?: string | null
+          id?: string
+          item_name: string
+          location?: string | null
+          price?: number | null
+          size?: string | null
+        }
+        Update: {
+          brand?: string | null
+          category?: string | null
+          company?: string | null
+          created_at?: string
+          deal?: string | null
+          id?: string
+          item_name?: string
+          location?: string | null
+          price?: number | null
+          size?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      purchase_history: {
+        Row: {
+          id: string
+          items: Json
+          purchased_at: string
+          retailer: string | null
+          total_price: number | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          items: Json
+          purchased_at?: string
+          retailer?: string | null
+          total_price?: number | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          items?: Json
+          purchased_at?: string
+          retailer?: string | null
+          total_price?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
