@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { toast } from "sonner";
-import isayvLogo from "@/assets/logo.png";
+import logo from "@/assets/logo.png";
+
 
 const Hero = () => {
   const [email, setEmail] = useState("");
@@ -28,7 +29,7 @@ const Hero = () => {
           {/* Logo */}
           <div className="flex justify-center mb-8">
             <img 
-              src={isayvLogo} 
+              src={logo} 
               alt="isayv logo" 
               className="h-32 w-auto rounded-2xl shadow-lg hover:shadow-primary/30 transition-all duration-300 hover:scale-105"
             />
