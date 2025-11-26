@@ -17,20 +17,19 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const url = new URL(req.url);
-    const productId = url.searchParams.get('productId');
+    const { productIds } = await req.json();
 
-    if (!productId) {
+    if (!productIds || !Array.isArray(productIds) || productIds.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'Query parameter "productId" is required' }),
+        JSON.stringify({ error: 'Request body must include "productIds" array' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Comparing prices for product: ${productId}`);
+    console.log(`Comparing cart with ${productIds.length} products`);
 
-    // Get product details
-    const { data: product, error: productError } = await supabase
+    // Get all products in cart
+    const { data: products, error: productsError } = await supabase
       .from('products')
       .select(`
         id,
@@ -42,50 +41,69 @@ Deno.serve(async (req) => {
           name
         )
       `)
-      .eq('id', productId)
-      .single();
+      .in('id', productIds);
 
-    if (productError || !product) {
-      console.error('Product not found:', productError);
+    if (productsError) {
+      console.error('Error fetching products:', productsError);
       return new Response(
-        JSON.stringify({ error: 'Product not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Failed to fetch products' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Get retailer prices
-    const { data: retailers, error: retailersError } = await supabase
+    // Get retailer prices for all products
+    const { data: retailerProducts, error: retailerError } = await supabase
       .from('retailer_products')
       .select('*')
-      .eq('product_id', productId);
+      .in('product_id', productIds);
 
-    if (retailersError) {
-      console.error('Error fetching retailers:', retailersError);
+    if (retailerError) {
+      console.error('Error fetching retailer products:', retailerError);
       return new Response(
         JSON.stringify({ error: 'Failed to fetch retailer prices' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Format response
+    // Format cart items
+    const cart = products.map(p => ({
+      id: p.id,
+      name: p.name,
+      brand: (p.brands as any)?.name || 'Unknown',
+      size: p.size,
+      gtin: p.gtin,
+      image_url: p.image_url
+    }));
+
+    // Calculate totals per retailer
+    const retailers = ['kroger', 'walmart', 'costco'];
+    const retailerTotals = retailers.map(retailerName => {
+      const retailerItems = retailerProducts.filter(rp => rp.retailer === retailerName);
+      const productIdsWithPrices = new Set(retailerItems.map(ri => ri.product_id));
+      
+      const complete = productIds.every(id => productIdsWithPrices.has(id));
+      const total = retailerItems.reduce((sum, item) => sum + (item.price || 0), 0);
+
+      return {
+        retailer: retailerName,
+        total: parseFloat(total.toFixed(2)),
+        complete
+      };
+    });
+
+    // Sort retailers by total (only complete ones first, then by price)
+    const sortedByTotal = retailerTotals
+      .filter(r => r.complete)
+      .sort((a, b) => a.total - b.total)
+      .map(r => r.retailer);
+
     const result = {
-      product: {
-        id: product.id,
-        name: product.name,
-        brand: (product.brands as any)?.name || 'Unknown',
-        size: product.size,
-        gtin: product.gtin,
-        image_url: product.image_url
-      },
-      retailers: retailers.map(r => ({
-        retailer: r.retailer,
-        price: r.price,
-        url: r.product_url,
-        last_scraped: r.last_scraped
-      }))
+      cart,
+      retailers: retailerTotals,
+      sortedByTotal
     };
 
-    console.log(`Found ${retailers.length} retailers for product`);
+    console.log(`Cart comparison complete. Best: ${sortedByTotal[0] || 'none'}`);
 
     return new Response(
       JSON.stringify(result),
