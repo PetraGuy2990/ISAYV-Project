@@ -5,8 +5,9 @@ import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Search, Plus, X, TrendingDown } from "lucide-react";
+import { Search, Plus, X, Trophy } from "lucide-react";
 import { searchProducts, ProductPrice, getProductByName } from "@/data/mockProducts";
+import { ComparisonSummaryDialog } from "@/components/ComparisonSummaryDialog";
 import isayvLogo from "@/assets/logo.png";
 
 interface CartItem {
@@ -22,7 +23,7 @@ const Dashboard = () => {
   const [searchResults, setSearchResults] = useState<ProductPrice[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [isComparing, setIsComparing] = useState(false);
+  const [showComparisonModal, setShowComparisonModal] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -219,24 +220,35 @@ const Dashboard = () => {
   };
 
   const calculateTotals = () => {
-    let walmartTotal = 0;
-    let krogerTotal = 0;
+    const retailers = [
+      { name: "Walmart", key: "walmart", color: "#0071ce" },
+      { name: "Kroger", key: "kroger", color: "#003da5" },
+      { name: "Costco", key: "costco", color: "#0078ce" },
+    ];
 
-    cartItems.forEach((item) => {
-      const product = getProductByName(item.product_name);
-      if (product) {
-        walmartTotal += product.walmart * item.quantity;
-        krogerTotal += product.kroger * item.quantity;
-      }
+    return retailers.map((retailer) => {
+      let total = 0;
+      cartItems.forEach((item) => {
+        const product = getProductByName(item.product_name);
+        if (product && retailer.key in product) {
+          total += (product as any)[retailer.key] * item.quantity;
+        }
+      });
+      return {
+        name: retailer.name,
+        total,
+        color: retailer.color,
+      };
     });
-
-    return { walmartTotal, krogerTotal };
   };
 
-  const getCheapestStore = () => {
-    const { walmartTotal, krogerTotal } = calculateTotals();
-    if (walmartTotal === 0 && krogerTotal === 0) return null;
-    return walmartTotal < krogerTotal ? "walmart" : "kroger";
+  const getCheapestRetailer = () => {
+    const totals = calculateTotals();
+    const validTotals = totals.filter(r => r.total > 0);
+    if (validTotals.length === 0) return null;
+    return validTotals.reduce((min, retailer) => 
+      retailer.total < min.total ? retailer : min
+    );
   };
 
   const handleSignOut = async () => {
@@ -245,9 +257,8 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  const { walmartTotal, krogerTotal } = calculateTotals();
-  const cheapestStore = getCheapestStore();
-  const savings = Math.abs(walmartTotal - krogerTotal);
+  const retailerTotals = calculateTotals();
+  const cheapestRetailer = getCheapestRetailer();
 
   if (loading) {
     return (
@@ -313,7 +324,7 @@ const Dashboard = () => {
                         <div className="flex-1">
                           <p className="font-medium">{product.name}</p>
                           <p className="text-sm text-muted-foreground">
-                            Walmart: ${product.walmart.toFixed(2)} | Kroger: ${product.kroger.toFixed(2)}
+                            Walmart: ${product.walmart.toFixed(2)} | Kroger: ${product.kroger.toFixed(2)} | Costco: ${product.costco.toFixed(2)}
                           </p>
                         </div>
                         <Button
@@ -393,38 +404,38 @@ const Dashboard = () => {
               </div>
 
               {/* Comparison Section */}
-              {cartItems.length > 0 && (
+              {cartItems.length > 0 && cheapestRetailer && (
                 <div className="p-6 border-t border-border space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-[#0071ce]/10 rounded-lg">
-                      <span className="font-semibold text-[#0071ce]">Walmart</span>
-                      <span className="text-lg font-bold">
-                        ${walmartTotal.toFixed(2)}
-                      </span>
+                  <div 
+                    className="p-4 rounded-lg border-2 relative"
+                    style={{
+                      backgroundColor: `${cheapestRetailer.color}10`,
+                      borderColor: cheapestRetailer.color,
+                    }}
+                  >
+                    <div className="absolute -top-3 left-4 bg-background px-3 py-1 rounded-full border-2 flex items-center gap-1.5 text-xs font-semibold"
+                      style={{ borderColor: cheapestRetailer.color, color: cheapestRetailer.color }}
+                    >
+                      <Trophy className="h-3.5 w-3.5" />
+                      Best Price
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-[#003da5]/10 rounded-lg">
-                      <span className="font-semibold text-[#003da5]">Kroger</span>
-                      <span className="text-lg font-bold">
-                        ${krogerTotal.toFixed(2)}
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="font-semibold text-lg" style={{ color: cheapestRetailer.color }}>
+                        {cheapestRetailer.name}
+                      </span>
+                      <span className="text-2xl font-bold">
+                        ${cheapestRetailer.total.toFixed(2)}
                       </span>
                     </div>
                   </div>
 
-                  {savings > 0 && (
-                    <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 flex items-center gap-2 text-primary text-sm">
-                      <TrendingDown className="h-4 w-4 flex-shrink-0" />
-                      <span className="font-semibold">
-                        Save ${savings.toFixed(2)} at {cheapestStore === "walmart" ? "Walmart" : "Kroger"}!
-                      </span>
-                    </div>
-                  )}
-
                   <Button
                     className="w-full"
                     size="lg"
-                    onClick={() => setIsComparing(!isComparing)}
+                    variant="outline"
+                    onClick={() => setShowComparisonModal(true)}
                   >
-                    {isComparing ? "Hide" : "Show"} Comparison
+                    See Comparison Summary
                   </Button>
                 </div>
               )}
@@ -432,6 +443,12 @@ const Dashboard = () => {
           </div>
         </div>
       </main>
+
+      <ComparisonSummaryDialog
+        open={showComparisonModal}
+        onOpenChange={setShowComparisonModal}
+        retailers={retailerTotals}
+      />
     </div>
   );
 };
