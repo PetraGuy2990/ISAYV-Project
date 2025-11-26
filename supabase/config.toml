@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.scrape-all]
 verify_jwt = false
+
+[functions.identify-product]
+verify_jwt = false

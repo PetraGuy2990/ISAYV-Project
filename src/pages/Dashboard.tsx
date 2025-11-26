@@ -5,9 +5,10 @@ import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Search, Plus, X, Trophy } from "lucide-react";
+import { Search, Plus, X, Trophy, Camera } from "lucide-react";
 import { searchProducts, ProductPrice, getProductByName } from "@/data/mockProducts";
 import { ComparisonSummaryDialog } from "@/components/ComparisonSummaryDialog";
+import { CameraModal } from "@/components/CameraModal";
 import isayvLogo from "@/assets/logo.png";
 
 interface CartItem {
@@ -24,6 +25,7 @@ const Dashboard = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [showComparisonModal, setShowComparisonModal] = useState(false);
+  const [showCameraModal, setShowCameraModal] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -301,36 +303,27 @@ const Dashboard = () => {
             <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
               <h2 className="text-2xl font-bold mb-4">Search Products</h2>
               
-              {/* Location Section */}
-              <div className="mb-6 p-4 bg-accent/50 rounded-lg border border-border">
-                <h3 className="text-lg font-semibold mb-2">Compare Grocery Prices Near You and Online Too</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Create your shopping list in Basket and you'll instantly see which stores have your favorite products and what the total price is at each store. 
-                  Local and online prices vary as much as 30 to 40 percent each week, so check Basket every time. On a time crunch? Compare prices for online retailers too.
-                </p>
-                <div className="flex gap-2">
-                  <Input
-                    type="text"
-                    placeholder="Enter ZIP code or location"
-                    className="flex-1"
-                  />
-                  <Button variant="secondary">
-                    Find Stores
-                  </Button>
-                </div>
-              </div>
-              
               <div className="relative" ref={dropdownRef}>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Search for products (e.g., Coke 1L, Milk, Bread...)"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
-                    className="pl-10 h-12"
-                  />
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Search for products (e.g., Coke 1L, Milk, Bread...)"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
+                      className="pl-10 h-12"
+                    />
+                  </div>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={() => setShowCameraModal(true)}
+                    className="h-12 px-4"
+                  >
+                    <Camera className="h-5 w-5" />
+                  </Button>
                 </div>
 
                 {showDropdown && searchResults.length > 0 && (
@@ -467,6 +460,15 @@ const Dashboard = () => {
         open={showComparisonModal}
         onOpenChange={setShowComparisonModal}
         retailers={retailerTotals}
+      />
+
+      <CameraModal
+        open={showCameraModal}
+        onOpenChange={setShowCameraModal}
+        onProductDetected={(productName) => {
+          setSearchQuery(productName);
+          setShowDropdown(true);
+        }}
       />
     </div>
   );
