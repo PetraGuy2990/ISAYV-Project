@@ -301,6 +301,25 @@ const Dashboard = () => {
             <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
               <h2 className="text-2xl font-bold mb-4">Search Products</h2>
               
+              {/* Location Section */}
+              <div className="mb-6 p-4 bg-accent/50 rounded-lg border border-border">
+                <h3 className="text-lg font-semibold mb-2">Compare Grocery Prices Near You and Online Too</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Create your shopping list in Basket and you'll instantly see which stores have your favorite products and what the total price is at each store. 
+                  Local and online prices vary as much as 30 to 40 percent each week, so check Basket every time. On a time crunch? Compare prices for online retailers too.
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    placeholder="Enter ZIP code or location"
+                    className="flex-1"
+                  />
+                  <Button variant="secondary">
+                    Find Stores
+                  </Button>
+                </div>
+              </div>
+              
               <div className="relative" ref={dropdownRef}>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
