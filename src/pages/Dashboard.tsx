@@ -5,7 +5,7 @@ import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Search, Plus, X, Trophy, Camera } from "lucide-react";
+import { Search, Plus, X, Trophy, Camera, User as UserIcon, LogOut, LogIn, ShoppingBasket, Scale, Store } from "lucide-react";
 import { searchProducts, ProductPrice, getProductByName } from "@/data/mockProducts";
 import { ComparisonSummaryDialog } from "@/components/ComparisonSummaryDialog";
 import { CameraModal } from "@/components/CameraModal";
@@ -280,17 +280,20 @@ const Dashboard = () => {
               ISAYV
             </h1>
           </div>
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate("/account")}>
-              My Account
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" onClick={() => navigate("/account")} className="gap-2 hover:scale-105 transition-transform">
+              <UserIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">My Account</span>
             </Button>
             {user ? (
-              <Button variant="outline" onClick={handleSignOut}>
-                Sign Out
+              <Button variant="outline" onClick={handleSignOut} className="gap-2 hover:scale-105 transition-transform">
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Sign Out</span>
               </Button>
             ) : (
-              <Button variant="outline" onClick={() => navigate("/auth")}>
-                Sign In
+              <Button variant="outline" onClick={() => navigate("/auth")} className="gap-2 hover:scale-105 transition-transform">
+                <LogIn className="h-4 w-4" />
+                <span className="hidden sm:inline">Sign In</span>
               </Button>
             )}
           </div>
@@ -359,10 +362,22 @@ const Dashboard = () => {
           <div className="lg:col-span-1">
             <div className="bg-card border border-border rounded-xl shadow-sm sticky top-24">
               <div className="p-6 border-b border-border">
-                <h2 className="text-2xl font-bold">My Cart</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {cartItems.length} {cartItems.length === 1 ? "item" : "items"}
-                </p>
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <ShoppingBasket className="h-6 w-6 text-primary" />
+                    {cartItems.length > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                        {cartItems.length}
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">My Cart</h2>
+                    <p className="text-sm text-muted-foreground">
+                      {cartItems.length} {cartItems.length === 1 ? "item" : "items"}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {/* Scrollable Cart Items */}
@@ -419,7 +434,7 @@ const Dashboard = () => {
               {cartItems.length > 0 && cheapestRetailer && (
                 <div className="p-6 border-t border-border space-y-4">
                   <div 
-                    className="p-4 rounded-lg border-2 relative"
+                    className="p-4 rounded-lg border-2 relative hover:shadow-lg transition-shadow"
                     style={{
                       backgroundColor: `${cheapestRetailer.color}10`,
                       borderColor: cheapestRetailer.color,
@@ -432,9 +447,12 @@ const Dashboard = () => {
                       Best Price
                     </div>
                     <div className="flex items-center justify-between mt-2">
-                      <span className="font-semibold text-lg" style={{ color: cheapestRetailer.color }}>
-                        {cheapestRetailer.name}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <Store className="h-5 w-5" style={{ color: cheapestRetailer.color }} />
+                        <span className="font-semibold text-lg" style={{ color: cheapestRetailer.color }}>
+                          {cheapestRetailer.name}
+                        </span>
+                      </div>
                       <span className="text-2xl font-bold">
                         ${cheapestRetailer.total.toFixed(2)}
                       </span>
@@ -442,11 +460,12 @@ const Dashboard = () => {
                   </div>
 
                   <Button
-                    className="w-full"
+                    className="w-full gap-2 hover:scale-105 transition-transform"
                     size="lg"
                     variant="outline"
                     onClick={() => setShowComparisonModal(true)}
                   >
+                    <Scale className="h-4 w-4" />
                     See Comparison Summary
                   </Button>
                 </div>
