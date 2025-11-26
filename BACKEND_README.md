@@ -94,7 +94,53 @@ curl "https://yypsgricdvtvlogucfsm.supabase.co/functions/v1/compare?productId=uu
 }
 ```
 
-### 3. Scrape Kroger
+### 3. Compare Cart Prices
+**POST** `/compare`
+
+Get total cart cost comparison across Kroger, Walmart, and Costco.
+
+**Example Request:**
+```bash
+curl -X POST "https://yypsgricdvtvlogucfsm.supabase.co/functions/v1/compare" \
+  -H "Content-Type: application/json" \
+  -d '{"productIds": ["uuid1", "uuid2", "uuid3"]}'
+```
+
+**Example Response:**
+```json
+{
+  "cart": [
+    {
+      "id": "uuid1",
+      "name": "Kettle Sea Salt Chips",
+      "brand": "Kettle",
+      "size": "8.5oz",
+      "image_url": "https://...",
+      "gtin": "0008411413715"
+    }
+  ],
+  "retailers": [
+    {
+      "retailer": "kroger",
+      "total": 24.10,
+      "complete": true
+    },
+    {
+      "retailer": "walmart",
+      "total": 25.30,
+      "complete": true
+    },
+    {
+      "retailer": "costco",
+      "total": 26.50,
+      "complete": false
+    }
+  ],
+  "sortedByTotal": ["kroger", "walmart"]
+}
+```
+
+### 4. Scrape Kroger
 **POST** `/scrape-kroger`
 
 Trigger a scrape of Kroger's website and ingest products into the database.
@@ -106,38 +152,74 @@ curl -X POST "https://yypsgricdvtvlogucfsm.supabase.co/functions/v1/scrape-kroge
   -d '{"query": "kettle chips"}'
 ```
 
+### 5. Scrape Walmart
+**POST** `/scrape-walmart`
+
+Trigger a scrape of Walmart's website and ingest products into the database.
+
+**Example Request:**
+```bash
+curl -X POST "https://yypsgricdvtvlogucfsm.supabase.co/functions/v1/scrape-walmart" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "kettle chips"}'
+```
+
+### 6. Scrape Costco
+**POST** `/scrape-costco`
+
+Trigger a scrape of Costco's website and ingest products into the database.
+
+**Example Request:**
+```bash
+curl -X POST "https://yypsgricdvtvlogucfsm.supabase.co/functions/v1/scrape-costco" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "kettle chips"}'
+```
+
+### 7. Scrape All Retailers
+**POST** `/scrape-all`
+
+Trigger scraping across Kroger, Walmart, and Costco simultaneously.
+
+**Example Request:**
+```bash
+curl -X POST "https://yypsgricdvtvlogucfsm.supabase.co/functions/v1/scrape-all" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "kettle chips"}'
+```
+
 **Example Response:**
 ```json
 {
   "success": true,
-  "message": "Scraped and ingested 12 products",
-  "products_ingested": 12,
-  "products_found": 15,
-  "products": [
-    {
-      "name": "Kettle Sea Salt Chips",
-      "brand": "Kettle",
-      "size": "8.5oz",
-      "price": 3.49,
-      "url": "https://www.kroger.com/p/...",
-      "image_url": "https://..."
-    }
-  ]
+  "message": "Scraped 35 products from all retailers",
+  "total_ingested": 35,
+  "total_found": 40,
+  "retailers": {
+    "kroger": { "ingested": 12, "found": 15, "error": null },
+    "walmart": { "ingested": 11, "found": 12, "error": null },
+    "costco": { "ingested": 12, "found": 13, "error": null }
+  }
 }
 ```
 
 ## 🕸 Scraper Implementation
 
-The Kroger scraper is implemented using:
-- **HTTP Fetch**: Direct HTTP requests to Kroger's website
+The scrapers for Kroger, Walmart, and Costco are implemented using:
+- **HTTP Fetch**: Direct HTTP requests to retailer websites
 - **HTML Parsing**: Regex-based extraction (simplified approach)
-- **Data Normalization**: Extracts brand, size, price, and product details
+- **Data Normalization**: Extracts brand, size, price, image, and product details
 
-**Note:** The current scraper uses basic HTML parsing. For production use, you may want to:
+**Supported Retailers:**
+- **Kroger**: Searches product listings and extracts brand, price, image, size
+- **Walmart**: Parses JSON-LD product data from search results
+- **Costco**: Extracts product information from catalog search
+
+**Note:** The current scrapers use basic HTML parsing. For production use, you may want to:
 - Use a more robust HTML parser
 - Add retry logic and rate limiting
 - Implement proxy rotation for reliability
-- Handle dynamic content (if Kroger uses JavaScript rendering)
+- Handle dynamic content rendering
 
 ### Ingestion Pipeline
 
@@ -175,10 +257,19 @@ curl -X POST "https://yypsgricdvtvlogucfsm.supabase.co/functions/v1/scrape-kroge
   -d '{"query": "lays chips"}'
 ```
 
-### Test Price Comparison
-After scraping, get a product ID from the search results, then:
+### Test Cart Comparison
+After scraping, get product IDs from search results, then:
 ```bash
-curl "https://yypsgricdvtvlogucfsm.supabase.co/functions/v1/compare?productId=YOUR-PRODUCT-ID"
+curl -X POST "https://yypsgricdvtvlogucfsm.supabase.co/functions/v1/compare" \
+  -H "Content-Type: application/json" \
+  -d '{"productIds": ["PRODUCT-ID-1", "PRODUCT-ID-2"]}'
+```
+
+### Test Scrape All Retailers
+```bash
+curl -X POST "https://yypsgricdvtvlogucfsm.supabase.co/functions/v1/scrape-all" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "doritos"}'
 ```
 
 ## 📁 Project Structure
@@ -189,9 +280,15 @@ supabase/
   │   ├── search/
   │   │   └── index.ts          # Search API endpoint
   │   ├── compare/
-  │   │   └── index.ts          # Price comparison endpoint
-  │   └── scrape-kroger/
-  │       └── index.ts          # Kroger scraper + ingestion
+  │   │   └── index.ts          # Cart comparison endpoint (multi-product)
+  │   ├── scrape-kroger/
+  │   │   └── index.ts          # Kroger scraper + ingestion
+  │   ├── scrape-walmart/
+  │   │   └── index.ts          # Walmart scraper + ingestion
+  │   ├── scrape-costco/
+  │   │   └── index.ts          # Costco scraper + ingestion
+  │   └── scrape-all/
+  │       └── index.ts          # Scrapes all retailers at once
   └── config.toml               # Edge function configuration
 ```
 

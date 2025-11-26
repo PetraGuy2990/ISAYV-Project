@@ -8,3 +8,12 @@ verify_jwt = false
 
 [functions.scrape-kroger]
 verify_jwt = false
+
+[functions.scrape-walmart]
+verify_jwt = false
+
+[functions.scrape-costco]
+verify_jwt = false
+
+[functions.scrape-all]
+verify_jwt = false
