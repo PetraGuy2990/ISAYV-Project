@@ -1,1 +1,10 @@
 project_id = "yypsgricdvtvlogucfsm"
+
+[functions.search]
+verify_jwt = false
+
+[functions.compare]
+verify_jwt = false
+
+[functions.scrape-kroger]
+verify_jwt = false
