@@ -1,17 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
 
 const Hero = () => {
   const [email, setEmail] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (email) {
-      toast.success("Thanks for your interest! We'll be in touch soon.");
+      toast.success("Thanks for signing up! We'll be in touch soon.");
       setEmail("");
     }
   };
@@ -66,9 +68,28 @@ const Hero = () => {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground mt-3">
-              Be the first to experience next-generation AI
+              Join our beta to save on groceries
             </p>
           </form>
+          
+          {/* Action buttons */}
+          <div className="flex gap-4 mt-8 justify-center">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => navigate("/auth")}
+              className="px-8"
+            >
+              Sign In
+            </Button>
+            <Button
+              size="lg"
+              onClick={() => navigate("/auth")}
+              className="px-8 shadow-glow"
+            >
+              Get Started
+            </Button>
+          </div>
         </div>
       </div>
     </section>
