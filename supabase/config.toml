@@ -1,1 +1,22 @@
 project_id = "yypsgricdvtvlogucfsm"
+
+[functions.search]
+verify_jwt = false
+
+[functions.compare]
+verify_jwt = false
+
+[functions.scrape-kroger]
+verify_jwt = false
+
+[functions.scrape-walmart]
+verify_jwt = false
+
+[functions.scrape-costco]
+verify_jwt = false
+
+[functions.scrape-all]
+verify_jwt = false
+
+[functions.identify-product]
+verify_jwt = false
