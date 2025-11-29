@@ -9,6 +9,7 @@ import { Search, Plus, X, Trophy, Camera, User as UserIcon, LogOut, LogIn, Shopp
 import { searchProducts, ProductPrice, getProductByName } from "@/data/mockProducts";
 import { ComparisonSummaryDialog } from "@/components/ComparisonSummaryDialog";
 import { CameraModal } from "@/components/CameraModal";
+import { SearchModeToggle, SearchMode } from "@/components/SearchModeToggle";
 import isayvLogo from "@/assets/logo.png";
 
 interface CartItem {
@@ -21,6 +22,7 @@ const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchMode, setSearchMode] = useState<SearchMode>("cheapest");
   const [searchResults, setSearchResults] = useState<ProductPrice[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -303,8 +305,17 @@ const Dashboard = () => {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Search and Results Section */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-              <h2 className="text-2xl font-bold mb-4">Search Products</h2>
+            <div 
+              className={`bg-card border rounded-xl p-6 shadow-sm transition-all ${
+                searchMode === 'brand' 
+                  ? 'bg-accent/5 border-accent/40' 
+                  : 'border-border/60'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold">Search Products</h2>
+                <SearchModeToggle mode={searchMode} onChange={setSearchMode} />
+              </div>
               
               <div className="relative" ref={dropdownRef}>
                 <div className="flex gap-2">
@@ -312,7 +323,11 @@ const Dashboard = () => {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input
                       type="text"
-                      placeholder="Search for products (e.g., Coke 1L, Milk, Bread...)"
+                      placeholder={
+                        searchMode === 'brand'
+                          ? "Search by brand e.g. 'Dairy Pure milk'"
+                          : "Search all items e.g. 'milk'"
+                      }
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
@@ -328,6 +343,12 @@ const Dashboard = () => {
                     <Camera className="h-5 w-5" />
                   </Button>
                 </div>
+
+                <p className="text-sm text-muted-foreground mt-2">
+                  {searchMode === 'brand'
+                    ? "Brand-loyal mode: prioritizing branded products."
+                    : "Cheapest mode: sorting by lowest total price."}
+                </p>
 
                 {showDropdown && searchResults.length > 0 && (
                   <div className="absolute w-full mt-2 bg-card border border-border rounded-lg shadow-lg max-h-96 overflow-y-auto z-50 animate-fade-in">
