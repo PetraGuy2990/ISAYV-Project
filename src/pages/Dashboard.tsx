@@ -129,7 +129,7 @@ const Dashboard = () => {
       const { error } = await supabase.from("grocery_list_items").insert([
         {
           grocery_list_id: activeListId,
-          grocery_item_id: item.id,
+          custom_item_name: item.item_name,
           quantity: 1,
         },
       ]);
