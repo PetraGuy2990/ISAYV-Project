@@ -12,7 +12,7 @@ import { SearchModeToggle, SearchMode } from "@/components/SearchModeToggle";
 import { useGroceryLists } from "@/hooks/useGroceryLists";
 import { GroceryListsBar } from "@/components/GroceryListsBar";
 import { CreateListDialog } from "@/components/CreateListDialog";
-import { GroceryListDetail } from "@/components/GroceryListDetail";
+import { GroceryListSheet } from "@/components/GroceryListSheet";
 import isayvLogo from "@/assets/logo.png";
 
 interface SearchResult {
@@ -23,6 +23,7 @@ interface SearchResult {
   company: string | null;
   size: string | null;
   category: string | null;
+  image_url: string | null;
 }
 
 const Dashboard = () => {
@@ -202,110 +203,99 @@ const Dashboard = () => {
       )}
 
       <main className="container mx-auto px-4 py-8 flex-1 max-w-6xl">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Search Panel */}
-          <div className={showListDetail ? "lg:col-span-2" : "lg:col-span-3"}>
-            <div 
-              className={`bg-card border rounded-xl p-6 shadow-sm transition-all mb-6 ${
-                searchMode === 'brand' 
-                  ? 'bg-accent/5 border-accent/40' 
-                  : 'border-border/60'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Search Products</h2>
-                <SearchModeToggle mode={searchMode} onChange={setSearchMode} />
-              </div>
-              
-              <div className="flex gap-2 mb-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder={
-                      searchMode === 'brand'
-                        ? "Search by brand e.g. 'Dairy Pure milk'"
-                        : "Search all items e.g. 'milk'"
-                    }
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleSearch();
-                    }}
-                    className="pl-10 h-12"
-                  />
-                </div>
-                <Button
-                  size="lg"
-                  onClick={handleSearch}
-                  disabled={searching}
-                  className="h-12"
-                >
-                  Search
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={() => setShowCameraModal(true)}
-                  className="h-12 px-4"
-                >
-                  <Camera className="h-5 w-5" />
-                </Button>
-              </div>
-
-              <p className="text-sm text-muted-foreground">
-                {searchMode === 'brand'
-                  ? "Brand-loyal mode: prioritizing branded products."
-                  : "Cheapest mode: sorting by lowest total price."}
-              </p>
-            </div>
-
-            {/* Search Results */}
-            {searchResults.length > 0 && (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {searchResults.map((item) => (
-                  <Card key={item.id} className="hover:shadow-lg transition-shadow">
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold mb-2">{item.item_name}</h3>
-                      {item.brand && (
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {item.brand}
-                        </p>
-                      )}
-                      {item.price && (
-                        <p className="text-sm mb-4">
-                          Price: ${item.price.toFixed(2)}
-                        </p>
-                      )}
-                      <Button
-                        size="sm"
-                        onClick={() => addToList(item)}
-                        disabled={!activeList}
-                        className="w-full"
-                      >
-                        {activeList ? `Add to ${activeList.name}` : 'Create a list first'}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+        {/* Search Panel */}
+        <div 
+          className={`bg-card border rounded-xl p-6 shadow-sm transition-all mb-6 ${
+            searchMode === 'brand' 
+              ? 'bg-accent/5 border-accent/40' 
+              : 'border-border/60'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold">Search Products</h2>
+            <SearchModeToggle mode={searchMode} onChange={setSearchMode} />
           </div>
-
-          {/* List Detail Panel */}
-          {showListDetail && activeList && (
-            <div className="lg:col-span-1">
-              <GroceryListDetail
-                list={activeList}
-                onUpdateList={updateList}
-                onDeleteList={(listId) => {
-                  deleteList(listId);
-                  setShowListDetail(false);
+          
+          <div className="flex gap-2 mb-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder={
+                  searchMode === 'brand'
+                    ? "Search by brand e.g. 'Dairy Pure milk'"
+                    : "Search all items e.g. 'milk'"
+                }
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSearch();
                 }}
+                className="pl-10 h-12"
               />
             </div>
-          )}
+            <Button
+              size="lg"
+              onClick={handleSearch}
+              disabled={searching}
+              className="h-12"
+            >
+              Search
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => setShowCameraModal(true)}
+              className="h-12 px-4"
+            >
+              <Camera className="h-5 w-5" />
+            </Button>
+          </div>
+
+          <p className="text-sm text-muted-foreground">
+            {searchMode === 'brand'
+              ? "Brand-loyal mode: prioritizing branded products."
+              : "Cheapest mode: sorting by lowest total price."}
+          </p>
         </div>
+
+        {/* Search Results */}
+        {searchResults.length > 0 && (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {searchResults.map((item) => (
+              <Card key={item.id} className="hover:shadow-lg transition-shadow">
+                <CardContent className="p-4">
+                  {item.image_url && (
+                    <img
+                      src={item.image_url}
+                      alt={item.item_name}
+                      className="w-full h-32 object-cover rounded-md mb-3"
+                    />
+                  )}
+                  <h3 className="font-semibold mb-2">{item.item_name}</h3>
+                  {item.brand && (
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {item.brand}
+                    </p>
+                  )}
+                  {item.price && (
+                    <p className="text-sm mb-4">
+                      Price: ${item.price.toFixed(2)}
+                    </p>
+                  )}
+                  <Button
+                    size="sm"
+                    onClick={() => addToList(item)}
+                    disabled={!activeList}
+                    className="w-full"
+                  >
+                    {activeList ? `Add to ${activeList.name}` : 'Create a list first'}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </main>
 
       <CameraModal
@@ -318,6 +308,14 @@ const Dashboard = () => {
         open={showCreateListDialog}
         onOpenChange={setShowCreateListDialog}
         onCreateList={handleCreateList}
+      />
+
+      <GroceryListSheet
+        open={showListDetail}
+        onOpenChange={setShowListDetail}
+        list={activeList}
+        onUpdateList={updateList}
+        onDeleteList={deleteList}
       />
     </div>
   );

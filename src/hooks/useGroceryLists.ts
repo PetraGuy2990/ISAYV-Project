@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface GroceryList {
   id: string;
@@ -42,7 +42,6 @@ export function useGroceryLists() {
   const [lists, setLists] = useState<GroceryList[]>([]);
   const [activeListId, setActiveListId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   useEffect(() => {
     loadLists();
@@ -72,11 +71,7 @@ export function useGroceryLists() {
       }
     } catch (error: any) {
       console.error('Error loading lists:', error);
-      toast({
-        title: 'Error loading lists',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Error loading lists: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -105,18 +100,11 @@ export function useGroceryLists() {
       setLists([...lists, data]);
       setActiveListId(data.id);
 
-      toast({
-        title: 'List created',
-        description: `"${name}" has been created.`,
-      });
+      toast.success(`"${name}" has been created.`);
 
       return data;
     } catch (error: any) {
-      toast({
-        title: 'Error creating list',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Error creating list: ' + error.message);
       return null;
     }
   };
@@ -139,15 +127,9 @@ export function useGroceryLists() {
         )
       );
 
-      toast({
-        title: 'List updated',
-      });
+      toast.success('List updated');
     } catch (error: any) {
-      toast({
-        title: 'Error updating list',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Error updating list: ' + error.message);
     }
   };
 
@@ -168,15 +150,9 @@ export function useGroceryLists() {
         setActiveListId(remainingLists.length > 0 ? remainingLists[0].id : null);
       }
 
-      toast({
-        title: 'List deleted',
-      });
+      toast.success('List deleted');
     } catch (error: any) {
-      toast({
-        title: 'Error deleting list',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Error deleting list: ' + error.message);
     }
   };
 
