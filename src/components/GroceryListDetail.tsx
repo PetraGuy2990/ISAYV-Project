@@ -434,20 +434,20 @@ export function GroceryListDetail({
           retailers={[
             {
               name: 'Kroger',
-              total: comparisonResult.retailers.kroger.total,
+              total: comparisonResult.retailers?.kroger?.total || 0,
               color: '#0066B2',
             },
             {
               name: 'Walmart',
-              total: comparisonResult.retailers.walmart.total,
+              total: comparisonResult.retailers?.walmart?.total || 0,
               color: '#FFC220',
             },
             {
               name: 'Costco',
-              total: comparisonResult.retailers.costco.total,
+              total: comparisonResult.retailers?.costco?.total || 0,
               color: '#E31837',
             },
-          ]}
+          ].filter(r => r.total > 0)}
         />
       )}
 
