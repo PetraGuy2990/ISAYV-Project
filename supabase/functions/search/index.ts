@@ -29,38 +29,77 @@ Deno.serve(async (req) => {
 
     console.log(`Searching for: ${query} in mode: ${mode}`);
 
-    // Build the query - search in grocery_items table instead
-    let productsQuery = supabase
-      .from('grocery_items')
-      .select('*')
-      .or(`item_name.ilike.%${query}%,brand.ilike.%${query}%`)
+    // Search in products table with brands and retailer_products
+    const { data: products, error } = await supabase
+      .from('products')
+      .select(`
+        id,
+        name,
+        size,
+        gtin,
+        image_url,
+        brands (
+          id,
+          name
+        ),
+        retailer_products (
+          id,
+          retailer,
+          price,
+          product_url
+        )
+      `)
+      .or(`name.ilike.%${query}%,brands.name.ilike.%${query}%`)
       .limit(50);
-
-    const { data: products, error } = await productsQuery;
 
     if (error) {
       console.error('Search error:', error);
       return new Response(
-        JSON.stringify({ error: 'Failed to search products' }),
+        JSON.stringify({ error: 'Failed to search products', details: error.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!products || products.length === 0) {
+      console.log('No products found');
+      return new Response(
+        JSON.stringify({ results: [] }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // Process results with brand matching info
     const resultsWithPrice = products.map(p => {
-      const brand = p.brand || 'Generic';
+      const brand = (p.brands as any)?.name || 'Generic';
+      const retailerProducts = (p.retailer_products as any) || [];
+      
+      // Calculate min price across all retailers
+      const prices = retailerProducts
+        .filter((rp: any) => rp.price != null)
+        .map((rp: any) => parseFloat(rp.price));
+      const minPrice = prices.length > 0 ? Math.min(...prices) : null;
+
+      // Get price breakdown by retailer
+      const retailerPrices: Record<string, number> = {};
+      retailerProducts.forEach((rp: any) => {
+        if (rp.price) {
+          retailerPrices[rp.retailer] = parseFloat(rp.price);
+        }
+      });
+
       const brandMatch = brand.toLowerCase().includes(query.toLowerCase());
-      const nameMatch = p.item_name.toLowerCase().includes(query.toLowerCase());
-      const price = p.price ? parseFloat(p.price) : null;
+      const nameMatch = p.name.toLowerCase().includes(query.toLowerCase());
 
       return {
         id: p.id,
-        item_name: p.item_name,
+        item_name: p.name,
         brand,
         size: p.size,
-        price,
-        company: p.company,
-        category: p.category,
+        price: minPrice,
+        company: retailerProducts.length > 0 ? retailerProducts[0].retailer : null,
+        category: null,
+        image_url: p.image_url,
+        retailer_prices: retailerPrices,
         brandMatch,
         nameMatch
       };

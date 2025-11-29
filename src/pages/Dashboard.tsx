@@ -76,6 +76,7 @@ const Dashboard = () => {
 
     setSearching(true);
     try {
+      // First try to search existing data
       const { data, error } = await supabase.functions.invoke("search", {
         body: { query: searchQuery, mode: searchMode },
       });
@@ -86,14 +87,62 @@ const Dashboard = () => {
       }
 
       console.log('Search results:', data);
-      setSearchResults(data.results || []);
       
+      // If no results found, offer to scrape
       if (!data.results || data.results.length === 0) {
-        toast.error("No products found. Try a different search term.");
+        toast.error("No products found in database.", {
+          description: "Scraping retailers...",
+        });
+        
+        // Trigger scraping
+        await handleScrape();
+        return;
       }
+      
+      setSearchResults(data.results || []);
     } catch (error: any) {
       console.error('Search failed:', error);
       toast.error("Search failed: " + (error.message || 'Unknown error'));
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleScrape = async () => {
+    if (!searchQuery.trim()) return;
+
+    setSearching(true);
+    try {
+      toast.success("Scraping retailers for " + searchQuery + "...");
+      
+      const { data, error } = await supabase.functions.invoke("scrape-all", {
+        body: { query: searchQuery },
+      });
+
+      if (error) {
+        console.error('Scrape error:', error);
+        throw error;
+      }
+
+      console.log('Scrape results:', data);
+      
+      if (data.total_ingested > 0) {
+        toast.success(`Found ${data.total_ingested} products! Searching again...`);
+        
+        // Search again after scraping
+        const { data: searchData, error: searchError } = await supabase.functions.invoke("search", {
+          body: { query: searchQuery, mode: searchMode },
+        });
+
+        if (!searchError && searchData.results) {
+          setSearchResults(searchData.results);
+        }
+      } else {
+        toast.error("No products found at any retailer.");
+      }
+    } catch (error: any) {
+      console.error('Scrape failed:', error);
+      toast.error("Scraping failed: " + (error.message || 'Unknown error'));
     } finally {
       setSearching(false);
     }
