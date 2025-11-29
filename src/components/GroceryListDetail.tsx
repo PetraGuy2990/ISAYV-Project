@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trash2, UserPlus, X, Edit2, Check } from 'lucide-react';
+import { Trash2, UserPlus, X, Edit2, Check, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,11 +8,33 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import type { GroceryList, GroceryListItem, Collaborator } from '@/hooks/useGroceryLists';
+import { ComparisonSummaryDialog } from './ComparisonSummaryDialog';
 
 interface GroceryListDetailProps {
   list: GroceryList;
   onUpdateList: (listId: string, updates: any) => void;
   onDeleteList: (listId: string) => void;
+}
+
+interface ComparisonResult {
+  cart: Array<{
+    id: string;
+    name: string;
+    brand: string;
+    size: string;
+    image_url: string;
+    prices: {
+      kroger: number | null;
+      walmart: number | null;
+      costco: number | null;
+    };
+  }>;
+  retailers: {
+    kroger: { total: number; complete: boolean };
+    walmart: { total: number; complete: boolean };
+    costco: { total: number; complete: boolean };
+  };
+  sortedByTotal: string[];
 }
 
 export function GroceryListDetail({
@@ -25,6 +47,8 @@ export function GroceryListDetail({
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(list.name);
   const [newCollaboratorEmail, setNewCollaboratorEmail] = useState('');
+  const [isComparing, setIsComparing] = useState(false);
+  const [comparisonResult, setComparisonResult] = useState<ComparisonResult | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -155,6 +179,67 @@ export function GroceryListDetail({
     setIsEditingName(false);
   };
 
+  const handleCompare = async () => {
+    if (items.length === 0) {
+      toast({
+        title: 'No items to compare',
+        description: 'Add items to your list first',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsComparing(true);
+    try {
+      const productIds = items
+        .filter((item) => item.grocery_items?.id)
+        .map((item) => item.grocery_items!.id);
+
+      if (productIds.length === 0) {
+        toast({
+          title: 'No products to compare',
+          description: 'Items need to be from the product database',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('compare', {
+        body: { productIds },
+      });
+
+      if (error) throw error;
+
+      setComparisonResult(data);
+    } catch (error: any) {
+      toast({
+        title: 'Comparison failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsComparing(false);
+    }
+  };
+
+  const groupItemsByCategory = () => {
+    const categorized: { [key: string]: GroceryListItem[] } = {};
+    
+    items.forEach((item) => {
+      const category = item.grocery_items?.category || 'Other';
+      if (!categorized[category]) {
+        categorized[category] = [];
+      }
+      categorized[category].push(item);
+    });
+
+    return categorized;
+  };
+
+  const groupedItems = groupItemsByCategory();
+  const categories = Object.keys(groupedItems);
+  const shouldGroup = categories.length > 2;
+
   return (
     <div className="space-y-6">
       {/* List Header */}
@@ -222,13 +307,64 @@ export function GroceryListDetail({
       {/* List Items */}
       <Card>
         <CardHeader>
-          <CardTitle>Items ({items.length})</CardTitle>
+          <CardTitle>Basket ({items.length} {items.length === 1 ? 'item' : 'items'})</CardTitle>
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
             <p className="text-muted-foreground text-sm">
               No items yet. Search and add items to this list.
             </p>
+          ) : shouldGroup ? (
+            <div className="space-y-6">
+              {categories.map((category) => (
+                <div key={category}>
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
+                    {category}
+                  </h3>
+                  <div className="space-y-3">
+                    {groupedItems[category].map((item) => {
+                      const displayName = item.grocery_items?.item_name || item.custom_item_name || 'Unknown Item';
+                      const brand = item.grocery_items?.brand;
+                      const price = item.grocery_items?.price;
+                      
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                        >
+                          <div className="flex-1">
+                            <p className="font-medium">{displayName}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              {brand && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {brand}
+                                </Badge>
+                              )}
+                              {price && (
+                                <span className="text-sm text-muted-foreground">
+                                  ${price.toFixed(2)}
+                                </span>
+                              )}
+                              <span className="text-sm text-muted-foreground">
+                                Qty: {item.quantity}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeItem(item.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="space-y-3">
               {items.map((item) => {
@@ -272,8 +408,46 @@ export function GroceryListDetail({
               })}
             </div>
           )}
+          
+          {items.length > 0 && (
+            <div className="mt-6 pt-6 border-t">
+              <Button 
+                onClick={handleCompare} 
+                disabled={isComparing}
+                className="w-full"
+                size="lg"
+              >
+                <TrendingUp className="h-5 w-5 mr-2" />
+                {isComparing ? 'Comparing...' : 'Compare Prices'}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {comparisonResult && (
+        <ComparisonSummaryDialog
+          open={!!comparisonResult}
+          onOpenChange={(open) => !open && setComparisonResult(null)}
+          retailers={[
+            {
+              name: 'Kroger',
+              total: comparisonResult.retailers.kroger.total,
+              color: '#0066B2',
+            },
+            {
+              name: 'Walmart',
+              total: comparisonResult.retailers.walmart.total,
+              color: '#FFC220',
+            },
+            {
+              name: 'Costco',
+              total: comparisonResult.retailers.costco.total,
+              color: '#E31837',
+            },
+          ]}
+        />
+      )}
 
       {/* Collaborators */}
       <Card>

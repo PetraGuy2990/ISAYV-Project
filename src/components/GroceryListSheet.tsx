@@ -23,7 +23,7 @@ export function GroceryListSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>List Details</SheetTitle>
+          <SheetTitle>Grocery List</SheetTitle>
         </SheetHeader>
         <div className="mt-6">
           <GroceryListDetail
