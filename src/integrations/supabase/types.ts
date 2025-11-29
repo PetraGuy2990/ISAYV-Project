@@ -109,6 +109,110 @@ export type Database = {
         }
         Relationships: []
       }
+      grocery_list_collaborators: {
+        Row: {
+          collaborator_email: string
+          created_at: string
+          grocery_list_id: string
+          id: string
+          role: string | null
+        }
+        Insert: {
+          collaborator_email: string
+          created_at?: string
+          grocery_list_id: string
+          id?: string
+          role?: string | null
+        }
+        Update: {
+          collaborator_email?: string
+          created_at?: string
+          grocery_list_id?: string
+          id?: string
+          role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grocery_list_collaborators_grocery_list_id_fkey"
+            columns: ["grocery_list_id"]
+            isOneToOne: false
+            referencedRelation: "grocery_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grocery_list_items: {
+        Row: {
+          created_at: string
+          custom_item_name: string | null
+          grocery_item_id: string | null
+          grocery_list_id: string
+          id: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          custom_item_name?: string | null
+          grocery_item_id?: string | null
+          grocery_list_id: string
+          id?: string
+          quantity?: number
+        }
+        Update: {
+          created_at?: string
+          custom_item_name?: string | null
+          grocery_item_id?: string | null
+          grocery_list_id?: string
+          id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grocery_list_items_grocery_item_id_fkey"
+            columns: ["grocery_item_id"]
+            isOneToOne: false
+            referencedRelation: "grocery_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grocery_list_items_grocery_list_id_fkey"
+            columns: ["grocery_list_id"]
+            isOneToOne: false
+            referencedRelation: "grocery_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grocery_lists: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           brand_id: string | null
