@@ -23,17 +23,12 @@ interface ComparisonResult {
     brand: string;
     size: string;
     image_url: string;
-    prices: {
-      kroger: number | null;
-      walmart: number | null;
-      costco: number | null;
-    };
   }>;
-  retailers: {
-    kroger: { total: number; complete: boolean };
-    walmart: { total: number; complete: boolean };
-    costco: { total: number; complete: boolean };
-  };
+  retailers: Array<{
+    retailer: string;
+    total: number;
+    complete: boolean;
+  }>;
   sortedByTotal: string[];
 }
 
@@ -431,23 +426,12 @@ export function GroceryListDetail({
         <ComparisonSummaryDialog
           open={!!comparisonResult}
           onOpenChange={(open) => !open && setComparisonResult(null)}
-          retailers={[
-            {
-              name: 'Kroger',
-              total: comparisonResult.retailers?.kroger?.total || 0,
-              color: '#0066B2',
-            },
-            {
-              name: 'Walmart',
-              total: comparisonResult.retailers?.walmart?.total || 0,
-              color: '#FFC220',
-            },
-            {
-              name: 'Costco',
-              total: comparisonResult.retailers?.costco?.total || 0,
-              color: '#E31837',
-            },
-          ].filter(r => r.total > 0)}
+          retailers={comparisonResult.retailers.map(r => ({
+            name: r.retailer.charAt(0).toUpperCase() + r.retailer.slice(1),
+            total: r.total,
+            color: r.retailer === 'kroger' ? '#0066B2' : 
+                   r.retailer === 'walmart' ? '#FFC220' : '#E31837'
+          }))}
         />
       )}
 
