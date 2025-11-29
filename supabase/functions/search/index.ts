@@ -30,6 +30,7 @@ Deno.serve(async (req) => {
     console.log(`Searching for: ${query} in mode: ${mode}`);
 
     // Search in products table with brands and retailer_products
+    // Use ilike for case-insensitive search on product name
     const { data: products, error } = await supabase
       .from('products')
       .select(`
@@ -49,7 +50,7 @@ Deno.serve(async (req) => {
           product_url
         )
       `)
-      .or(`name.ilike.%${query}%,brands.name.ilike.%${query}%`)
+      .ilike('name', `%${query}%`)
       .limit(50);
 
     if (error) {
