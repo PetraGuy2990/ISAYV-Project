@@ -54,16 +54,26 @@ const Dashboard = () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Redirect to auth if not logged in
+      if (!session) {
+        navigate("/auth");
+      }
     };
 
     checkUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      
+      // Redirect to auth if user signs out
+      if (!session) {
+        navigate("/auth");
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   // Auto-prompt to create first list if none exist
   useEffect(() => {
