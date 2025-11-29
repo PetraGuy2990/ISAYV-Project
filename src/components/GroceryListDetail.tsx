@@ -62,14 +62,15 @@ export function GroceryListDetail({
         .from('grocery_list_items')
         .select(`
           *,
-          grocery_items (
+          products (
             id,
-            item_name,
-            brand,
-            price,
-            company,
+            name,
             size,
-            category
+            gtin,
+            image_url,
+            brands (
+              name
+            )
           )
         `)
         .eq('grocery_list_id', list.id);
@@ -192,8 +193,8 @@ export function GroceryListDetail({
     setIsComparing(true);
     try {
       const productIds = items
-        .filter((item) => item.grocery_items?.id)
-        .map((item) => item.grocery_items!.id);
+        .filter((item) => item.grocery_item_id)
+        .map((item) => item.grocery_item_id);
 
       if (productIds.length === 0) {
         toast({
@@ -226,7 +227,8 @@ export function GroceryListDetail({
     const categorized: { [key: string]: GroceryListItem[] } = {};
     
     items.forEach((item) => {
-      const category = item.grocery_items?.category || 'Other';
+      const product = item.products as any;
+      const category = product?.category || 'Other';
       if (!categorized[category]) {
         categorized[category] = [];
       }
@@ -323,9 +325,9 @@ export function GroceryListDetail({
                   </h3>
                   <div className="space-y-3">
                     {groupedItems[category].map((item) => {
-                      const displayName = item.grocery_items?.item_name || item.custom_item_name || 'Unknown Item';
-                      const brand = item.grocery_items?.brand;
-                      const price = item.grocery_items?.price;
+                      const product = item.products as any;
+                      const displayName = product?.name || item.custom_item_name || 'Unknown Item';
+                      const brand = product?.brands?.name;
                       
                       return (
                         <div
@@ -340,9 +342,9 @@ export function GroceryListDetail({
                                   {brand}
                                 </Badge>
                               )}
-                              {price && (
+                              {product?.size && (
                                 <span className="text-sm text-muted-foreground">
-                                  ${price.toFixed(2)}
+                                  {product.size}
                                 </span>
                               )}
                               <span className="text-sm text-muted-foreground">
@@ -368,9 +370,9 @@ export function GroceryListDetail({
           ) : (
             <div className="space-y-3">
               {items.map((item) => {
-                const displayName = item.grocery_items?.item_name || item.custom_item_name || 'Unknown Item';
-                const brand = item.grocery_items?.brand;
-                const price = item.grocery_items?.price;
+                const product = item.products as any;
+                const displayName = product?.name || item.custom_item_name || 'Unknown Item';
+                const brand = product?.brands?.name;
                 
                 return (
                   <div
@@ -385,9 +387,9 @@ export function GroceryListDetail({
                             {brand}
                           </Badge>
                         )}
-                        {price && (
+                        {product?.size && (
                           <span className="text-sm text-muted-foreground">
-                            ${price.toFixed(2)}
+                            {product.size}
                           </span>
                         )}
                         <span className="text-sm text-muted-foreground">

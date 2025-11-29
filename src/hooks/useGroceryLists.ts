@@ -19,14 +19,16 @@ export interface GroceryListItem {
   custom_item_name: string | null;
   quantity: number;
   created_at: string;
-  grocery_items?: {
+  products?: {
     id: string;
-    item_name: string;
-    brand: string | null;
-    price: number | null;
-    company: string | null;
+    name: string;
     size: string | null;
-    category: string | null;
+    gtin: string | null;
+    image_url: string | null;
+    brands?: {
+      name: string;
+    } | null;
+    category?: string | null;
   } | null;
 }
 
