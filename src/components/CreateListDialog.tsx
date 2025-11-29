@@ -103,11 +103,19 @@ export function CreateListDialog({
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            type="button"
+          >
             Cancel
           </Button>
-          <Button onClick={handleCreate} disabled={!name.trim()}>
+          <Button 
+            onClick={handleCreate} 
+            disabled={!name.trim()}
+            type="button"
+          >
             Create List
           </Button>
         </DialogFooter>

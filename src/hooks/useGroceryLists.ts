@@ -50,6 +50,13 @@ export function useGroceryLists() {
 
   const loadLists = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('grocery_lists')
         .select('*')
@@ -64,6 +71,7 @@ export function useGroceryLists() {
         setActiveListId(data[0].id);
       }
     } catch (error: any) {
+      console.error('Error loading lists:', error);
       toast({
         title: 'Error loading lists',
         description: error.message,

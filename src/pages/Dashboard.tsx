@@ -64,6 +64,13 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Auto-prompt to create first list if none exist
+  useEffect(() => {
+    if (!listsLoading && lists.length === 0 && user) {
+      setShowCreateListDialog(true);
+    }
+  }, [listsLoading, lists.length, user]);
+
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
 
@@ -73,11 +80,20 @@ const Dashboard = () => {
         body: { query: searchQuery, mode: searchMode },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Search error:', error);
+        throw error;
+      }
 
+      console.log('Search results:', data);
       setSearchResults(data.results || []);
+      
+      if (!data.results || data.results.length === 0) {
+        toast.error("No products found. Try a different search term.");
+      }
     } catch (error: any) {
-      toast.error("Search failed: " + error.message);
+      console.error('Search failed:', error);
+      toast.error("Search failed: " + (error.message || 'Unknown error'));
     } finally {
       setSearching(false);
     }
