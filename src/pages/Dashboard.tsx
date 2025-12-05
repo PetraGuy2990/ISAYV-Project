@@ -142,8 +142,13 @@ const Dashboard = () => {
     }
   };
 
-  const handleCreateList = async (name: string, color: string, imageUrl?: string) => {
-    const newList = await createList(name, color, imageUrl);
+  const handleCreateList = async (
+    name: string, 
+    color: string, 
+    imageUrl?: string,
+    items?: { name: string; quantity: number }[]
+  ) => {
+    const newList = await createList(name, color, imageUrl, items);
     if (newList && lists.length === 0) {
       toast.success("Your first list is ready! Start adding items.");
     }
