@@ -79,7 +79,12 @@ export function useGroceryLists() {
     }
   };
 
-  const createList = async (name: string, color: string, imageUrl?: string) => {
+  const createList = async (
+    name: string, 
+    color: string, 
+    imageUrl?: string,
+    initialItems?: { name: string; quantity: number }[]
+  ) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
@@ -99,10 +104,28 @@ export function useGroceryLists() {
 
       if (error) throw error;
 
+      // Add initial items if provided
+      if (initialItems && initialItems.length > 0 && data) {
+        const itemsToInsert = initialItems.map(item => ({
+          grocery_list_id: data.id,
+          custom_item_name: item.name,
+          quantity: item.quantity,
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('grocery_list_items')
+          .insert(itemsToInsert);
+
+        if (itemsError) {
+          console.error('Error adding initial items:', itemsError);
+        }
+      }
+
       setLists([...lists, data]);
       setActiveListId(data.id);
 
-      toast.success(`"${name}" has been created.`);
+      const itemCount = initialItems?.length || 0;
+      toast.success(`"${name}" has been created${itemCount > 0 ? ` with ${itemCount} items` : ''}.`);
 
       return data;
     } catch (error: any) {
