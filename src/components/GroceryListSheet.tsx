@@ -26,14 +26,14 @@ export function GroceryListSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
+      <SheetContent side="bottom" className="h-[90vh] sm:h-[85vh] overflow-y-auto px-3 sm:px-6">
+        <SheetHeader className="pb-2">
+          <SheetTitle className="flex items-center gap-2 text-lg sm:text-xl">
             Grocery List
-            <Badge variant="secondary" className="text-xs">Demo</Badge>
+            <Badge variant="secondary" className="text-[10px] sm:text-xs">Demo</Badge>
           </SheetTitle>
         </SheetHeader>
-        <div className="mt-6">
+        <div className="mt-4 sm:mt-6 pb-safe">
           <GroceryListDetail
             list={list}
             onUpdateList={onUpdateList}
