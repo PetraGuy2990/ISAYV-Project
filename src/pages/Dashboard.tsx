@@ -81,39 +81,41 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex flex-col">
       {/* Demo Mode Banner */}
-      <div className="bg-primary/10 border-b border-primary/20 px-4 py-2">
-        <div className="container mx-auto flex items-center justify-center gap-2 text-sm">
-          <Sparkles className="h-4 w-4 text-primary" />
+      <div className="bg-primary/10 border-b border-primary/20 px-3 py-1.5 sm:px-4 sm:py-2">
+        <div className="container mx-auto flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+          <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
           <span className="text-primary font-medium">Demo Mode</span>
-          <span className="text-muted-foreground">– All data is simulated for demonstration purposes</span>
+          <span className="text-muted-foreground hidden xs:inline">– Simulated data</span>
         </div>
       </div>
 
       <header className="border-b border-primary/20 backdrop-blur-sm bg-background/80 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <img src={isayvLogo} alt="ISAYV" className="h-10" />
-            <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+        <div className="container mx-auto px-3 py-3 sm:px-4 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <img src={isayvLogo} alt="ISAYV" className="h-8 sm:h-10" />
+            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               ISAYV
             </h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 sm:gap-3">
             <Button
               variant="ghost"
+              size="sm"
               onClick={() => setShowListDetail(!showListDetail)}
               disabled={!activeList}
-              className="gap-2 hover:scale-105 transition-transform"
+              className="gap-1.5 sm:gap-2 hover:scale-105 transition-transform h-9 px-2 sm:px-3"
             >
-              <ShoppingBasket className="h-4 w-4" />
-              <span className="hidden sm:inline">{activeList?.name || "No List"}</span>
+              <ShoppingBasket className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="hidden sm:inline text-sm">{activeList?.name || "No List"}</span>
             </Button>
             <Button
               variant="ghost"
+              size="sm"
               onClick={() => navigate("/account")}
-              className="gap-2 hover:scale-105 transition-transform"
+              className="gap-1.5 sm:gap-2 hover:scale-105 transition-transform h-9 px-2 sm:px-3"
             >
-              <UserIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">Demo User</span>
+              <UserIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="hidden sm:inline text-sm">Demo User</span>
             </Button>
           </div>
         </div>
@@ -129,41 +131,41 @@ const Dashboard = () => {
         />
       )}
 
-      <main className="container mx-auto px-4 py-8 flex-1 max-w-6xl">
+      <main className="container mx-auto px-3 py-4 sm:px-4 sm:py-8 flex-1 max-w-6xl">
         {/* Search Panel */}
         <div
-          className={`bg-card border rounded-xl p-6 shadow-sm transition-all mb-6 ${
+          className={`bg-card border rounded-xl p-4 sm:p-6 shadow-sm transition-all mb-4 sm:mb-6 ${
             searchMode === "brand"
               ? "bg-accent/5 border-accent/40"
               : "border-border/60"
           }`}
         >
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold">Search Products</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <h2 className="text-xl sm:text-2xl font-bold">Search Products</h2>
             <SearchModeToggle mode={searchMode} onChange={setSearchMode} />
           </div>
 
-          <div className="flex gap-2 mb-2">
+          <div className="flex flex-col sm:flex-row gap-2 mb-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder={
                   searchMode === "brand"
-                    ? "Search by brand e.g. 'Kirkland milk'"
-                    : "Search all items e.g. 'milk', 'chicken', 'chips'"
+                    ? "Search by brand..."
+                    : "Search items..."
                 }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSearch();
                 }}
-                className="pl-10 h-12"
+                className="pl-9 sm:pl-10 h-11 sm:h-12 text-base"
               />
               
               {/* Autocomplete Suggestions */}
               {suggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 overflow-hidden max-h-60 overflow-y-auto">
                   {suggestions.map((suggestion) => (
                     <button
                       key={suggestion.id}
@@ -171,7 +173,7 @@ const Dashboard = () => {
                         setSearchQuery(suggestion.product.name);
                         handleSearch(suggestion.product.name);
                       }}
-                      className="w-full px-4 py-2 text-left hover:bg-accent transition-colors text-sm"
+                      className="w-full px-3 py-3 sm:px-4 sm:py-2 text-left hover:bg-accent transition-colors text-sm active:bg-accent/80"
                     >
                       {suggestion.text}
                     </button>
@@ -183,47 +185,47 @@ const Dashboard = () => {
               size="lg"
               onClick={() => handleSearch()}
               disabled={searching}
-              className="h-12"
+              className="h-11 sm:h-12 w-full sm:w-auto min-w-[100px]"
             >
-              {searching ? "Searching..." : "Search"}
+              {searching ? "..." : "Search"}
             </Button>
           </div>
 
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             {searchMode === "brand"
-              ? "Brand-loyal mode: prioritizing branded products."
-              : "Cheapest mode: sorting by lowest price."}
-            {" "}• 200+ products available
+              ? "Brand-loyal mode"
+              : "Cheapest mode"}
+            {" "}• 200+ products
           </p>
         </div>
 
         {/* Search Results */}
         {searchResults.length > 0 && (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {searchResults.map((item) => (
               <Card key={item.id} className="hover:shadow-lg transition-shadow overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <h3 className="font-semibold line-clamp-2">{item.name}</h3>
-                      <p className="text-sm text-muted-foreground">{item.brand}</p>
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-start justify-between mb-2 gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold line-clamp-2 text-sm sm:text-base">{item.name}</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">{item.brand}</p>
                     </div>
-                    <Badge variant="secondary" className="text-xs ml-2 shrink-0">
+                    <Badge variant="secondary" className="text-[10px] sm:text-xs shrink-0">
                       {item.category}
                     </Badge>
                   </div>
                   
-                  <p className="text-xs text-muted-foreground mb-3">{item.size}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3">{item.size}</p>
 
                   {/* Price comparison grid */}
-                  <div className="grid grid-cols-2 gap-1 mb-3">
+                  <div className="grid grid-cols-2 gap-1 mb-2 sm:mb-3">
                     {retailers.map((retailer) => {
                       const price = item.retailerPrices[retailer.id];
                       const isBest = item.bestRetailer === retailer.id;
                       return (
                         <div
                           key={retailer.id}
-                          className={`px-2 py-1 rounded text-xs flex items-center justify-between ${
+                          className={`px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-xs flex items-center justify-between ${
                             isBest
                               ? "bg-primary/10 border border-primary/30"
                               : "bg-muted/50"
@@ -239,7 +241,7 @@ const Dashboard = () => {
                   </div>
 
                   {item.minPrice && (
-                    <p className="text-sm font-semibold text-primary mb-3">
+                    <p className="text-xs sm:text-sm font-semibold text-primary mb-2 sm:mb-3">
                       Best: {formatPrice(item.minPrice)} at{" "}
                       {getRetailerInfo(item.bestRetailer!)?.name}
                     </p>
@@ -249,10 +251,12 @@ const Dashboard = () => {
                     size="sm"
                     onClick={() => addToList(item)}
                     disabled={!activeList}
-                    className="w-full gap-2"
+                    className="w-full gap-1.5 sm:gap-2 h-9 sm:h-10 text-xs sm:text-sm active:scale-[0.98]"
                   >
-                    <Plus className="h-4 w-4" />
-                    {activeList ? `Add to ${activeList.name}` : "Create a list first"}
+                    <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <span className="truncate">
+                      {activeList ? `Add to ${activeList.name}` : "Create list"}
+                    </span>
                   </Button>
                 </CardContent>
               </Card>
@@ -262,11 +266,11 @@ const Dashboard = () => {
 
         {/* Empty state */}
         {searchResults.length === 0 && !searching && (
-          <div className="text-center py-12">
-            <ShoppingBasket className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Search for groceries</h3>
-            <p className="text-muted-foreground mb-4">
-              Try searching for "milk", "chicken", "chips", or any grocery item
+          <div className="text-center py-8 sm:py-12 px-4">
+            <ShoppingBasket className="h-12 w-12 sm:h-16 sm:w-16 mx-auto text-muted-foreground/50 mb-3 sm:mb-4" />
+            <h3 className="text-lg sm:text-xl font-semibold mb-2">Search for groceries</h3>
+            <p className="text-sm sm:text-base text-muted-foreground mb-4">
+              Try "milk", "chicken", "chips" or any item
             </p>
             <div className="flex flex-wrap justify-center gap-2">
               {["Milk", "Eggs", "Bread", "Chicken", "Bananas", "Chips"].map((term) => (
@@ -278,6 +282,7 @@ const Dashboard = () => {
                     setSearchQuery(term);
                     handleSearch(term);
                   }}
+                  className="h-9 px-3 text-sm active:scale-[0.98]"
                 >
                   {term}
                 </Button>

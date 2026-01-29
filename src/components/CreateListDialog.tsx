@@ -156,39 +156,40 @@ export function CreateListDialog({
         onOpenChange(isOpen);
       }}
     >
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto mx-3 sm:mx-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            Create New Grocery List
+          <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            Create New List
             <Sparkles className="h-4 w-4 text-primary" />
           </DialogTitle>
-          <DialogDescription>
-            Give your list a name, choose a color, or upload images to pre-populate items.
+          <DialogDescription className="text-xs sm:text-sm">
+            Name your list or upload images to auto-populate items.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-3 sm:py-4">
           <div className="space-y-2">
-            <Label htmlFor="list-name">List Name</Label>
+            <Label htmlFor="list-name" className="text-sm">List Name</Label>
             <Input
               id="list-name"
-              placeholder="e.g. Weekly Shop, Party Snacks"
+              placeholder="e.g. Weekly Shop"
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleCreate();
               }}
+              className="h-11"
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Color</Label>
-            <div className="flex gap-2 flex-wrap">
+            <Label className="text-sm">Color</Label>
+            <div className="flex gap-2 sm:gap-2 flex-wrap">
               {PRESET_COLORS.map((color) => (
                 <button
                   key={color}
                   onClick={() => setSelectedColor(color)}
-                  className="w-8 h-8 rounded-full transition-transform hover:scale-110"
+                  className="w-9 h-9 sm:w-8 sm:h-8 rounded-full transition-transform hover:scale-110 active:scale-95"
                   style={{
                     backgroundColor: color,
                     border:
@@ -203,24 +204,25 @@ export function CreateListDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="image-url">Cover Image URL (optional)</Label>
+            <Label htmlFor="image-url" className="text-sm">Cover Image URL (optional)</Label>
             <Input
               id="image-url"
               placeholder="https://example.com/image.jpg"
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
+              className="h-11"
             />
           </div>
 
           {/* Upload List Section */}
-          <div className="space-y-3 pt-2 border-t border-border">
-            <Label className="flex items-center gap-2">
+          <div className="space-y-3 pt-3 border-t border-border">
+            <Label className="flex items-center gap-2 text-sm">
               <Upload className="h-4 w-4" />
-              Upload List or Product Images
+              Upload Images
             </Label>
-            <p className="text-sm text-muted-foreground">
-              Upload handwritten notes, typed lists, or product images to auto-populate your list.
-              <span className="text-primary"> (Demo: simulated extraction)</span>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Upload notes or product images.
+              <span className="text-primary"> (Demo: simulated)</span>
             </p>
 
             <input
@@ -236,7 +238,7 @@ export function CreateListDialog({
               type="button"
               variant="outline"
               onClick={() => fileInputRef.current?.click()}
-              className="w-full"
+              className="w-full h-11 active:scale-[0.98]"
             >
               <Camera className="h-4 w-4 mr-2" />
               Select Images
@@ -251,11 +253,11 @@ export function CreateListDialog({
                       <img
                         src={img}
                         alt={`Upload ${index + 1}`}
-                        className="w-20 h-20 object-cover rounded-md border border-border"
+                        className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-md border border-border"
                       />
                       <button
                         onClick={() => removeImage(index)}
-                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1"
+                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1.5 active:scale-90"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -263,16 +265,16 @@ export function CreateListDialog({
                   ))}
                 </div>
 
-                <Button type="button" onClick={handleExtractItems} disabled={isExtracting} className="w-full">
+                <Button type="button" onClick={handleExtractItems} disabled={isExtracting} className="w-full h-11 active:scale-[0.98]">
                   {isExtracting ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Extracting Items...
+                      Extracting...
                     </>
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4 mr-2" />
-                      Extract Items from Images
+                      Extract Items
                     </>
                   )}
                 </Button>
@@ -282,25 +284,25 @@ export function CreateListDialog({
             {/* Extracted items */}
             {extractedItems.length > 0 && (
               <div className="space-y-2">
-                <Label>Extracted Items ({extractedItems.length})</Label>
-                <div className="max-h-40 overflow-y-auto space-y-1 border border-border rounded-md p-2">
+                <Label className="text-sm">Extracted ({extractedItems.length})</Label>
+                <div className="max-h-36 sm:max-h-40 overflow-y-auto space-y-1.5 border border-border rounded-md p-2">
                   {extractedItems.map((item, index) => (
-                    <div key={index} className="flex items-center gap-2 text-sm">
+                    <div key={index} className="flex items-center gap-1.5 sm:gap-2 text-sm">
                       <Input
                         type="number"
                         min={1}
                         value={item.quantity}
                         onChange={(e) => updateItemQuantity(index, parseInt(e.target.value) || 1)}
-                        className="w-14 h-7 text-center"
+                        className="w-12 sm:w-14 h-9 sm:h-7 text-center text-sm"
                       />
                       <Input
                         value={item.name}
                         onChange={(e) => updateItemName(index, e.target.value)}
-                        className="flex-1 h-7"
+                        className="flex-1 h-9 sm:h-7 text-sm"
                       />
                       <button
                         onClick={() => removeExtractedItem(index)}
-                        className="text-muted-foreground hover:text-destructive"
+                        className="text-muted-foreground hover:text-destructive p-1.5"
                       >
                         <X className="h-4 w-4" />
                       </button>
@@ -312,12 +314,12 @@ export function CreateListDialog({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)} type="button">
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} type="button" className="w-full sm:w-auto h-11 sm:h-10 order-2 sm:order-1">
             Cancel
           </Button>
-          <Button onClick={handleCreate} disabled={!name.trim()} type="button">
-            Create List {extractedItems.length > 0 && `(${extractedItems.length} items)`}
+          <Button onClick={handleCreate} disabled={!name.trim()} type="button" className="w-full sm:w-auto h-11 sm:h-10 order-1 sm:order-2 active:scale-[0.98]">
+            Create {extractedItems.length > 0 && `(${extractedItems.length})`}
           </Button>
         </DialogFooter>
       </DialogContent>
