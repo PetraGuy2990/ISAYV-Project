@@ -1,3 +1,8 @@
+/**
+ * DEMO MODE - Create List Dialog
+ * Image extraction simulated for demonstration.
+ */
+
 import { useState, useRef } from 'react';
 import {
   Dialog,
@@ -10,9 +15,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Camera, Upload, X, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Camera, Upload, X, Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+
 
 interface ExtractedItem {
   name: string;
@@ -34,6 +39,18 @@ const PRESET_COLORS = [
   '#06B6D4', // cyan
   '#EF4444', // red
   '#14B8A6', // teal
+];
+
+// Demo mode: Simulated extraction results
+const DEMO_EXTRACTED_ITEMS: ExtractedItem[] = [
+  { name: 'Milk', quantity: 1 },
+  { name: 'Eggs', quantity: 2 },
+  { name: 'Bread', quantity: 1 },
+  { name: 'Bananas', quantity: 1 },
+  { name: 'Chicken Breast', quantity: 2 },
+  { name: 'Butter', quantity: 1 },
+  { name: 'Cheese', quantity: 1 },
+  { name: 'Apples', quantity: 1 },
 ];
 
 export function CreateListDialog({
@@ -70,7 +87,7 @@ export function CreateListDialog({
     if (!files || files.length === 0) return;
 
     const newImages: string[] = [];
-    
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (!file.type.startsWith('image/')) continue;
@@ -84,9 +101,9 @@ export function CreateListDialog({
     }
 
     if (newImages.length > 0) {
-      setUploadedImages(prev => [...prev, ...newImages]);
+      setUploadedImages((prev) => [...prev, ...newImages]);
     }
-    
+
     // Reset input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -94,52 +111,57 @@ export function CreateListDialog({
   };
 
   const removeImage = (index: number) => {
-    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleExtractItems = async () => {
     if (uploadedImages.length === 0) return;
 
     setIsExtracting(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('extract-grocery-list', {
-        body: { images: uploadedImages }
-      });
 
-      if (error) throw error;
+    // Demo Mode: Simulate AI extraction with delay
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      if (data.items && data.items.length > 0) {
-        setExtractedItems(data.items);
-        toast.success(`Extracted ${data.items.length} items from images`);
-      } else {
-        toast.info('No items could be extracted from the images');
-      }
-    } catch (error) {
-      console.error('Error extracting items:', error);
-      toast.error('Failed to extract items from images');
-    } finally {
-      setIsExtracting(false);
-    }
+    // Randomly select 4-8 items from demo list
+    const numItems = Math.floor(Math.random() * 5) + 4;
+    const shuffled = [...DEMO_EXTRACTED_ITEMS].sort(() => Math.random() - 0.5);
+    const selectedItems = shuffled.slice(0, numItems);
+
+    setExtractedItems(selectedItems);
+    toast.success(`Extracted ${selectedItems.length} items from images (Demo)`);
+    setIsExtracting(false);
   };
 
   const removeExtractedItem = (index: number) => {
-    setExtractedItems(prev => prev.filter((_, i) => i !== index));
+    setExtractedItems((prev) => prev.filter((_, i) => i !== index));
   };
 
   const updateItemQuantity = (index: number, quantity: number) => {
-    setExtractedItems(prev => prev.map((item, i) => 
-      i === index ? { ...item, quantity: Math.max(1, quantity) } : item
-    ));
+    setExtractedItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, quantity: Math.max(1, quantity) } : item))
+    );
+  };
+
+  const updateItemName = (index: number, newName: string) => {
+    setExtractedItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, name: newName } : item))
+    );
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) resetForm();
-      onOpenChange(isOpen);
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) resetForm();
+        onOpenChange(isOpen);
+      }}
+    >
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Grocery List</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            Create New Grocery List
+            <Sparkles className="h-4 w-4 text-primary" />
+          </DialogTitle>
           <DialogDescription>
             Give your list a name, choose a color, or upload images to pre-populate items.
           </DialogDescription>
@@ -198,8 +220,9 @@ export function CreateListDialog({
             </Label>
             <p className="text-sm text-muted-foreground">
               Upload handwritten notes, typed lists, or product images to auto-populate your list.
+              <span className="text-primary"> (Demo: simulated extraction)</span>
             </p>
-            
+
             <input
               ref={fileInputRef}
               type="file"
@@ -208,7 +231,7 @@ export function CreateListDialog({
               onChange={handleFileSelect}
               className="hidden"
             />
-            
+
             <Button
               type="button"
               variant="outline"
@@ -239,20 +262,18 @@ export function CreateListDialog({
                     </div>
                   ))}
                 </div>
-                
-                <Button
-                  type="button"
-                  onClick={handleExtractItems}
-                  disabled={isExtracting}
-                  className="w-full"
-                >
+
+                <Button type="button" onClick={handleExtractItems} disabled={isExtracting} className="w-full">
                   {isExtracting ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       Extracting Items...
                     </>
                   ) : (
-                    'Extract Items from Images'
+                    <>
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Extract Items from Images
+                    </>
                   )}
                 </Button>
               </div>
@@ -270,9 +291,13 @@ export function CreateListDialog({
                         min={1}
                         value={item.quantity}
                         onChange={(e) => updateItemQuantity(index, parseInt(e.target.value) || 1)}
-                        className="w-16 h-7 text-center"
+                        className="w-14 h-7 text-center"
                       />
-                      <span className="flex-1 truncate">{item.name}</span>
+                      <Input
+                        value={item.name}
+                        onChange={(e) => updateItemName(index, e.target.value)}
+                        className="flex-1 h-7"
+                      />
                       <button
                         onClick={() => removeExtractedItem(index)}
                         className="text-muted-foreground hover:text-destructive"
@@ -288,18 +313,10 @@ export function CreateListDialog({
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)}
-            type="button"
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)} type="button">
             Cancel
           </Button>
-          <Button 
-            onClick={handleCreate} 
-            disabled={!name.trim()}
-            type="button"
-          >
+          <Button onClick={handleCreate} disabled={!name.trim()} type="button">
             Create List {extractedItems.length > 0 && `(${extractedItems.length} items)`}
           </Button>
         </DialogFooter>
