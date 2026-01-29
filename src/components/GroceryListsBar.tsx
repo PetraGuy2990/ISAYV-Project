@@ -1,11 +1,15 @@
+/**
+ * DEMO MODE - Grocery Lists Bar
+ */
+
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import type { GroceryList } from '@/hooks/useGroceryLists';
+import type { MockGroceryList } from '@/hooks/useMockGroceryLists';
 
 interface GroceryListsBarProps {
-  lists: GroceryList[];
+  lists: MockGroceryList[];
   activeListId: string | null;
   onListSelect: (listId: string) => void;
   onCreateList: () => void;

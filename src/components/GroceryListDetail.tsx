@@ -1,35 +1,24 @@
-import { useState, useEffect } from 'react';
+/**
+ * DEMO MODE - Grocery List Detail Component
+ * Uses mock data for demonstration purposes.
+ */
+
+import { useState, useMemo } from 'react';
 import { Trash2, UserPlus, X, Edit2, Check, TrendingUp } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
-import type { GroceryList, GroceryListItem, Collaborator } from '@/hooks/useGroceryLists';
+
 import { ComparisonSummaryDialog } from './ComparisonSummaryDialog';
+import { useMockGroceryLists, type MockGroceryList, type MockBasketItem } from '@/hooks/useMockGroceryLists';
+import { retailers, retailerPricing } from '@/data/mockGroceryData';
 
 interface GroceryListDetailProps {
-  list: GroceryList;
-  onUpdateList: (listId: string, updates: any) => void;
+  list: MockGroceryList;
+  onUpdateList: (listId: string, updates: Partial<MockGroceryList>) => void;
   onDeleteList: (listId: string) => void;
-}
-
-interface ComparisonResult {
-  cart: Array<{
-    id: string;
-    name: string;
-    brand: string;
-    size: string;
-    image_url: string;
-  }>;
-  retailers: Array<{
-    retailer: string;
-    total: number;
-    complete: boolean;
-  }>;
-  sortedByTotal: string[];
 }
 
 export function GroceryListDetail({
@@ -37,136 +26,25 @@ export function GroceryListDetail({
   onUpdateList,
   onDeleteList,
 }: GroceryListDetailProps) {
-  const [items, setItems] = useState<GroceryListItem[]>([]);
-  const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(list.name);
   const [newCollaboratorEmail, setNewCollaboratorEmail] = useState('');
-  const [isComparing, setIsComparing] = useState(false);
-  const [comparisonResult, setComparisonResult] = useState<ComparisonResult | null>(null);
-  const { toast } = useToast();
+  const [showComparison, setShowComparison] = useState(false);
+  
 
-  useEffect(() => {
-    loadItems();
-    loadCollaborators();
-  }, [list.id]);
+  const {
+    getListItems,
+    getListCollaborators,
+    removeItemFromList,
+    updateItemQuantity,
+    addCollaborator,
+    removeCollaborator,
+    compareBasketPrices,
+  } = useMockGroceryLists();
 
-  const loadItems = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('grocery_list_items')
-        .select(`
-          *,
-          products (
-            id,
-            name,
-            size,
-            gtin,
-            image_url,
-            brands (
-              name
-            )
-          )
-        `)
-        .eq('grocery_list_id', list.id);
-
-      if (error) throw error;
-      setItems(data || []);
-    } catch (error: any) {
-      toast({
-        title: 'Error loading items',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const loadCollaborators = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('grocery_list_collaborators')
-        .select('*')
-        .eq('grocery_list_id', list.id);
-
-      if (error) throw error;
-      setCollaborators(data || []);
-    } catch (error: any) {
-      toast({
-        title: 'Error loading collaborators',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const removeItem = async (itemId: string) => {
-    try {
-      const { error } = await supabase
-        .from('grocery_list_items')
-        .delete()
-        .eq('id', itemId);
-
-      if (error) throw error;
-
-      setItems(items.filter((item) => item.id !== itemId));
-      toast({ title: 'Item removed' });
-    } catch (error: any) {
-      toast({
-        title: 'Error removing item',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const addCollaborator = async () => {
-    if (!newCollaboratorEmail.trim()) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('grocery_list_collaborators')
-        .insert([
-          {
-            grocery_list_id: list.id,
-            collaborator_email: newCollaboratorEmail,
-          },
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setCollaborators([...collaborators, data]);
-      setNewCollaboratorEmail('');
-      toast({ title: 'Collaborator added' });
-    } catch (error: any) {
-      toast({
-        title: 'Error adding collaborator',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const removeCollaborator = async (collabId: string) => {
-    try {
-      const { error } = await supabase
-        .from('grocery_list_collaborators')
-        .delete()
-        .eq('id', collabId);
-
-      if (error) throw error;
-
-      setCollaborators(collaborators.filter((c) => c.id !== collabId));
-      toast({ title: 'Collaborator removed' });
-    } catch (error: any) {
-      toast({
-        title: 'Error removing collaborator',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
+  const items = useMemo(() => getListItems(list.id), [list.id, getListItems]);
+  const collaborators = useMemo(() => getListCollaborators(list.id), [list.id, getListCollaborators]);
+  const comparison = useMemo(() => compareBasketPrices(list.id), [list.id, compareBasketPrices]);
 
   const saveName = () => {
     if (editedName.trim() && editedName !== list.name) {
@@ -175,55 +53,17 @@ export function GroceryListDetail({
     setIsEditingName(false);
   };
 
-  const handleCompare = async () => {
-    if (items.length === 0) {
-      toast({
-        title: 'No items to compare',
-        description: 'Add items to your list first',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsComparing(true);
-    try {
-      const productIds = items
-        .filter((item) => item.grocery_item_id)
-        .map((item) => item.grocery_item_id);
-
-      if (productIds.length === 0) {
-        toast({
-          title: 'No products to compare',
-          description: 'Items need to be from the product database',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke('compare', {
-        body: { productIds },
-      });
-
-      if (error) throw error;
-
-      setComparisonResult(data);
-    } catch (error: any) {
-      toast({
-        title: 'Comparison failed',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsComparing(false);
-    }
+  const handleAddCollaborator = () => {
+    if (!newCollaboratorEmail.trim()) return;
+    addCollaborator(list.id, newCollaboratorEmail, 'viewer');
+    setNewCollaboratorEmail('');
   };
 
   const groupItemsByCategory = () => {
-    const categorized: { [key: string]: GroceryListItem[] } = {};
-    
+    const categorized: Record<string, MockBasketItem[]> = {};
+
     items.forEach((item) => {
-      const product = item.products as any;
-      const category = product?.category || 'Other';
+      const category = item.product.category || 'Other';
       if (!categorized[category]) {
         categorized[category] = [];
       }
@@ -236,6 +76,11 @@ export function GroceryListDetail({
   const groupedItems = groupItemsByCategory();
   const categories = Object.keys(groupedItems);
   const shouldGroup = categories.length > 2;
+
+  // Calculate basket total
+  const basketTotal = useMemo(() => {
+    return items.reduce((sum, item) => sum + item.product.basePrice * item.quantity, 0);
+  }, [items]);
 
   return (
     <div className="space-y-6">
@@ -258,7 +103,7 @@ export function GroceryListDetail({
                   {list.name.charAt(0).toUpperCase()}
                 </div>
               )}
-              
+
               {isEditingName ? (
                 <div className="flex items-center gap-2 flex-1">
                   <Input
@@ -288,7 +133,7 @@ export function GroceryListDetail({
                 </div>
               )}
             </div>
-            
+
             <Button
               variant="destructive"
               size="sm"
@@ -301,10 +146,19 @@ export function GroceryListDetail({
         </CardHeader>
       </Card>
 
-      {/* List Items */}
+      {/* Basket Summary */}
       <Card>
         <CardHeader>
-          <CardTitle>Basket ({items.length} {items.length === 1 ? 'item' : 'items'})</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>
+              Basket ({items.length} {items.length === 1 ? 'item' : 'items'})
+            </CardTitle>
+            {items.length > 0 && (
+              <span className="text-lg font-semibold text-primary">
+                ~${basketTotal.toFixed(2)}
+              </span>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
@@ -316,122 +170,66 @@ export function GroceryListDetail({
               {categories.map((category) => (
                 <div key={category}>
                   <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
-                    {category}
+                    {category} ({groupedItems[category].length})
                   </h3>
                   <div className="space-y-3">
-                    {groupedItems[category].map((item) => {
-                      const product = item.products as any;
-                      const displayName = product?.name || item.custom_item_name || 'Unknown Item';
-                      const brand = product?.brands?.name;
-                      
-                      return (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                        >
-                          <div className="flex-1">
-                            <p className="font-medium">{displayName}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              {brand && (
-                                <Badge variant="secondary" className="text-xs">
-                                  {brand}
-                                </Badge>
-                              )}
-                              {product?.size && (
-                                <span className="text-sm text-muted-foreground">
-                                  {product.size}
-                                </span>
-                              )}
-                              <span className="text-sm text-muted-foreground">
-                                Qty: {item.quantity}
-                              </span>
-                            </div>
-                          </div>
-                          
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeItem(item.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      );
-                    })}
+                    {groupedItems[category].map((item) => (
+                      <BasketItemRow
+                        key={item.id}
+                        item={item}
+                        onRemove={() => removeItemFromList(item.id)}
+                        onUpdateQuantity={(qty) => updateItemQuantity(item.id, qty)}
+                      />
+                    ))}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
             <div className="space-y-3">
-              {items.map((item) => {
-                const product = item.products as any;
-                const displayName = product?.name || item.custom_item_name || 'Unknown Item';
-                const brand = product?.brands?.name;
-                
-                return (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex-1">
-                      <p className="font-medium">{displayName}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        {brand && (
-                          <Badge variant="secondary" className="text-xs">
-                            {brand}
-                          </Badge>
-                        )}
-                        {product?.size && (
-                          <span className="text-sm text-muted-foreground">
-                            {product.size}
-                          </span>
-                        )}
-                        <span className="text-sm text-muted-foreground">
-                          Qty: {item.quantity}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeItem(item.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                );
-              })}
+              {items.map((item) => (
+                <BasketItemRow
+                  key={item.id}
+                  item={item}
+                  onRemove={() => removeItemFromList(item.id)}
+                  onUpdateQuantity={(qty) => updateItemQuantity(item.id, qty)}
+                />
+              ))}
             </div>
           )}
-          
+
           {items.length > 0 && (
             <div className="mt-6 pt-6 border-t">
-              <Button 
-                onClick={handleCompare} 
-                disabled={isComparing}
+              <Button
+                onClick={() => setShowComparison(true)}
                 className="w-full"
                 size="lg"
               >
                 <TrendingUp className="h-5 w-5 mr-2" />
-                {isComparing ? 'Comparing...' : 'Compare Prices'}
+                Compare Prices Across Retailers
               </Button>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {comparisonResult && (
+      {/* Comparison Dialog */}
+      {comparison && (
         <ComparisonSummaryDialog
-          open={!!comparisonResult}
-          onOpenChange={(open) => !open && setComparisonResult(null)}
-          retailers={comparisonResult.retailers.map(r => ({
-            name: r.retailer.charAt(0).toUpperCase() + r.retailer.slice(1),
-            total: r.total,
-            color: r.retailer === 'kroger' ? '#0066B2' : 
-                   r.retailer === 'walmart' ? '#FFC220' : '#E31837'
-          }))}
+          open={showComparison}
+          onOpenChange={setShowComparison}
+          retailers={comparison.retailers.map((r) => {
+            const retailerInfo = retailers.find((ret) => ret.id === r.retailer);
+            return {
+              name: retailerInfo?.name || r.retailer,
+              total: r.total,
+              color: retailerInfo?.color || '#888',
+              complete: r.complete,
+              substituteCount: r.substituteCount,
+            };
+          })}
+          itemCount={items.length}
+          savings={comparison.savings}
         />
       )}
 
@@ -447,10 +245,10 @@ export function GroceryListDetail({
               value={newCollaboratorEmail}
               onChange={(e) => setNewCollaboratorEmail(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') addCollaborator();
+                if (e.key === 'Enter') handleAddCollaborator();
               }}
             />
-            <Button onClick={addCollaborator}>
+            <Button onClick={handleAddCollaborator}>
               <UserPlus className="h-4 w-4 mr-2" />
               Add
             </Button>
@@ -466,15 +264,15 @@ export function GroceryListDetail({
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback>
-                        {collab.collaborator_email.charAt(0).toUpperCase()}
+                        {collab.email.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm">{collab.collaborator_email}</span>
+                    <span className="text-sm">{collab.email}</span>
                     <Badge variant="outline" className="text-xs">
                       {collab.role}
                     </Badge>
                   </div>
-                  
+
                   <Button
                     variant="ghost"
                     size="icon"
@@ -488,6 +286,69 @@ export function GroceryListDetail({
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// Basket Item Row Component
+function BasketItemRow({
+  item,
+  onRemove,
+  onUpdateQuantity,
+}: {
+  item: MockBasketItem;
+  onRemove: () => void;
+  onUpdateQuantity: (qty: number) => void;
+}) {
+  const pricing = retailerPricing.get(item.product.id);
+  const prices = pricing
+    ? [pricing.walmart.price, pricing.costco.price, pricing.target.price, pricing.kroger.price].filter(
+        (p): p is number => p !== null
+      )
+    : [];
+  const minPrice = prices.length > 0 ? Math.min(...prices) : item.product.basePrice;
+
+  return (
+    <div className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+      <div className="flex-1">
+        <p className="font-medium">{item.product.name}</p>
+        <div className="flex items-center gap-2 mt-1 flex-wrap">
+          <Badge variant="secondary" className="text-xs">
+            {item.product.brand}
+          </Badge>
+          {item.product.size && (
+            <span className="text-sm text-muted-foreground">{item.product.size}</span>
+          )}
+          <span className="text-sm font-medium text-primary">
+            ${minPrice.toFixed(2)} ea
+          </span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <div className="flex items-center border rounded-md">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => onUpdateQuantity(item.quantity - 1)}
+          >
+            -
+          </Button>
+          <span className="w-8 text-center text-sm">{item.quantity}</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => onUpdateQuantity(item.quantity + 1)}
+          >
+            +
+          </Button>
+        </div>
+        <Button variant="ghost" size="icon" onClick={onRemove}>
+          <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
+      </div>
     </div>
   );
 }

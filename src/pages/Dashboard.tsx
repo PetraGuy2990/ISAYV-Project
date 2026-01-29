@@ -1,43 +1,31 @@
-import { useEffect, useState } from "react";
+/**
+ * DEMO MODE - Dashboard with mock data
+ * This app is for demonstration, content creation, and user testing only.
+ */
+
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Search, Camera, User as UserIcon, LogOut, LogIn, ShoppingBasket } from "lucide-react";
-import { CameraModal } from "@/components/CameraModal";
-import { SearchModeToggle, SearchMode } from "@/components/SearchModeToggle";
-import { useGroceryLists } from "@/hooks/useGroceryLists";
+import { Search, User as UserIcon, ShoppingBasket, Plus, Sparkles } from "lucide-react";
+import { SearchModeToggle } from "@/components/SearchModeToggle";
 import { GroceryListsBar } from "@/components/GroceryListsBar";
 import { CreateListDialog } from "@/components/CreateListDialog";
 import { GroceryListSheet } from "@/components/GroceryListSheet";
 import isayvLogo from "@/assets/logo.png";
-
-interface SearchResult {
-  id: string;
-  item_name: string;
-  brand: string | null;
-  price: number | null;
-  company: string | null;
-  size: string | null;
-  category: string | null;
-  image_url: string | null;
-}
+import { useMockGroceryLists } from "@/hooks/useMockGroceryLists";
+import { useMockSearch, type SearchResult } from "@/hooks/useMockSearch";
+import { retailers } from "@/data/mockGroceryData";
 
 const Dashboard = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchMode, setSearchMode] = useState<SearchMode>("cheapest");
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [showCameraModal, setShowCameraModal] = useState(false);
   const [showCreateListDialog, setShowCreateListDialog] = useState(false);
   const [showListDetail, setShowListDetail] = useState(false);
   const navigate = useNavigate();
 
+  // Mock grocery lists hook
   const {
     lists,
     activeListId,
@@ -47,129 +35,60 @@ const Dashboard = () => {
     createList,
     updateList,
     deleteList,
-  } = useGroceryLists();
+    addItemToList,
+  } = useMockGroceryLists();
 
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      setLoading(false);
-      
-      // Redirect to auth if not logged in
-      if (!session) {
-        navigate("/auth");
-      }
-    };
+  // Mock search hook
+  const {
+    query: searchQuery,
+    setQuery: setSearchQuery,
+    mode: searchMode,
+    setMode: setSearchMode,
+    results: searchResults,
+    searching,
+    suggestions,
+    search: handleSearch,
+  } = useMockSearch();
 
-    checkUser();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-      
-      // Redirect to auth if user signs out
-      if (!session) {
-        navigate("/auth");
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
-  // Auto-prompt to create first list if none exist
-  useEffect(() => {
-    if (!listsLoading && lists.length === 0 && user) {
-      setShowCreateListDialog(true);
-    }
-  }, [listsLoading, lists.length, user]);
-
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-
-    setSearching(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("search", {
-        body: { query: searchQuery, mode: searchMode },
-      });
-
-      if (error) {
-        console.error('Search error:', error);
-        throw error;
-      }
-
-      console.log('Search results:', data);
-      setSearchResults(data.results || []);
-      
-      if (!data.results || data.results.length === 0) {
-        toast.error("No products found for '" + searchQuery + "'", {
-          description: "Try searching for: milk, coke, pepsi, butter, or chips",
-        });
-      }
-    } catch (error: any) {
-      console.error('Search failed:', error);
-      toast.error("Search failed: " + (error.message || 'Unknown error'));
-    } finally {
-      setSearching(false);
-    }
-  };
-
-  const handleProductDetected = async (productName: string) => {
-    setSearchQuery(productName);
-    toast.success(`Identified: ${productName}`);
-    handleSearch();
-  };
-
-  const addToList = async (item: SearchResult) => {
+  const addToList = (item: SearchResult) => {
     if (!activeListId) {
       toast.error("Please create a list first");
       setShowCreateListDialog(true);
       return;
     }
 
-    try {
-      const { error } = await supabase.from("grocery_list_items").insert([
-        {
-          grocery_list_id: activeListId,
-          grocery_item_id: item.id,
-          quantity: 1,
-        },
-      ]);
-
-      if (error) throw error;
-
-      toast.success(`Added ${item.item_name} to ${activeList?.name || 'list'}`);
-    } catch (error: any) {
-      toast.error(error.message);
-    }
+    addItemToList(activeListId, item, 1);
   };
 
-  const handleCreateList = async (
-    name: string, 
-    color: string, 
+  const handleCreateList = (
+    name: string,
+    color: string,
     imageUrl?: string,
     items?: { name: string; quantity: number }[]
   ) => {
-    const newList = await createList(name, color, imageUrl, items);
-    if (newList && lists.length === 0) {
-      toast.success("Your first list is ready! Start adding items.");
-    }
+    createList(name, color, imageUrl, items);
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    toast.success("Signed out successfully");
-    navigate("/");
+  const formatPrice = (price: number | null) => {
+    if (price === null) return "N/A";
+    return `$${price.toFixed(2)}`;
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-xl">Loading...</div>
-      </div>
-    );
-  }
+  const getRetailerInfo = (id: string) => {
+    return retailers.find(r => r.id === id);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex flex-col">
+      {/* Demo Mode Banner */}
+      <div className="bg-primary/10 border-b border-primary/20 px-4 py-2">
+        <div className="container mx-auto flex items-center justify-center gap-2 text-sm">
+          <Sparkles className="h-4 w-4 text-primary" />
+          <span className="text-primary font-medium">Demo Mode</span>
+          <span className="text-muted-foreground">– All data is simulated for demonstration purposes</span>
+        </div>
+      </div>
+
       <header className="border-b border-primary/20 backdrop-blur-sm bg-background/80 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -179,30 +98,23 @@ const Dashboard = () => {
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               onClick={() => setShowListDetail(!showListDetail)}
               disabled={!activeList}
               className="gap-2 hover:scale-105 transition-transform"
             >
               <ShoppingBasket className="h-4 w-4" />
-              <span className="hidden sm:inline">{activeList?.name || 'No List'}</span>
+              <span className="hidden sm:inline">{activeList?.name || "No List"}</span>
             </Button>
-            <Button variant="ghost" onClick={() => navigate("/account")} className="gap-2 hover:scale-105 transition-transform">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/account")}
+              className="gap-2 hover:scale-105 transition-transform"
+            >
               <UserIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">My Account</span>
+              <span className="hidden sm:inline">Demo User</span>
             </Button>
-            {user ? (
-              <Button variant="outline" onClick={handleSignOut} className="gap-2 hover:scale-105 transition-transform">
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Sign Out</span>
-              </Button>
-            ) : (
-              <Button variant="outline" onClick={() => navigate("/auth")} className="gap-2 hover:scale-105 transition-transform">
-                <LogIn className="h-4 w-4" />
-                <span className="hidden sm:inline">Sign In</span>
-              </Button>
-            )}
           </div>
         </div>
       </header>
@@ -219,27 +131,27 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-4 py-8 flex-1 max-w-6xl">
         {/* Search Panel */}
-        <div 
+        <div
           className={`bg-card border rounded-xl p-6 shadow-sm transition-all mb-6 ${
-            searchMode === 'brand' 
-              ? 'bg-accent/5 border-accent/40' 
-              : 'border-border/60'
+            searchMode === "brand"
+              ? "bg-accent/5 border-accent/40"
+              : "border-border/60"
           }`}
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold">Search Products</h2>
             <SearchModeToggle mode={searchMode} onChange={setSearchMode} />
           </div>
-          
+
           <div className="flex gap-2 mb-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder={
-                  searchMode === 'brand'
-                    ? "Search by brand e.g. 'Dairy Pure milk'"
-                    : "Search all items e.g. 'milk'"
+                  searchMode === "brand"
+                    ? "Search by brand e.g. 'Kirkland milk'"
+                    : "Search all items e.g. 'milk', 'chicken', 'chips'"
                 }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -248,29 +160,40 @@ const Dashboard = () => {
                 }}
                 className="pl-10 h-12"
               />
+              
+              {/* Autocomplete Suggestions */}
+              {suggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+                  {suggestions.map((suggestion) => (
+                    <button
+                      key={suggestion.id}
+                      onClick={() => {
+                        setSearchQuery(suggestion.product.name);
+                        handleSearch(suggestion.product.name);
+                      }}
+                      className="w-full px-4 py-2 text-left hover:bg-accent transition-colors text-sm"
+                    >
+                      {suggestion.text}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <Button
               size="lg"
-              onClick={handleSearch}
+              onClick={() => handleSearch()}
               disabled={searching}
               className="h-12"
             >
-              Search
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => setShowCameraModal(true)}
-              className="h-12 px-4"
-            >
-              <Camera className="h-5 w-5" />
+              {searching ? "Searching..." : "Search"}
             </Button>
           </div>
 
           <p className="text-sm text-muted-foreground">
-            {searchMode === 'brand'
+            {searchMode === "brand"
               ? "Brand-loyal mode: prioritizing branded products."
-              : "Cheapest mode: sorting by lowest total price."}
+              : "Cheapest mode: sorting by lowest price."}
+            {" "}• 200+ products available
           </p>
         </div>
 
@@ -278,46 +201,91 @@ const Dashboard = () => {
         {searchResults.length > 0 && (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {searchResults.map((item) => (
-              <Card key={item.id} className="hover:shadow-lg transition-shadow">
+              <Card key={item.id} className="hover:shadow-lg transition-shadow overflow-hidden">
                 <CardContent className="p-4">
-                  {item.image_url && (
-                    <img
-                      src={item.image_url}
-                      alt={item.item_name}
-                      className="w-full h-32 object-cover rounded-md mb-3"
-                    />
-                  )}
-                  <h3 className="font-semibold mb-2">{item.item_name}</h3>
-                  {item.brand && (
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {item.brand}
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <h3 className="font-semibold line-clamp-2">{item.name}</h3>
+                      <p className="text-sm text-muted-foreground">{item.brand}</p>
+                    </div>
+                    <Badge variant="secondary" className="text-xs ml-2 shrink-0">
+                      {item.category}
+                    </Badge>
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground mb-3">{item.size}</p>
+
+                  {/* Price comparison grid */}
+                  <div className="grid grid-cols-2 gap-1 mb-3">
+                    {retailers.map((retailer) => {
+                      const price = item.retailerPrices[retailer.id];
+                      const isBest = item.bestRetailer === retailer.id;
+                      return (
+                        <div
+                          key={retailer.id}
+                          className={`px-2 py-1 rounded text-xs flex items-center justify-between ${
+                            isBest
+                              ? "bg-primary/10 border border-primary/30"
+                              : "bg-muted/50"
+                          }`}
+                        >
+                          <span className="font-medium">{retailer.logo}</span>
+                          <span className={isBest ? "font-bold text-primary" : ""}>
+                            {formatPrice(price)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {item.minPrice && (
+                    <p className="text-sm font-semibold text-primary mb-3">
+                      Best: {formatPrice(item.minPrice)} at{" "}
+                      {getRetailerInfo(item.bestRetailer!)?.name}
                     </p>
                   )}
-                  {item.price && (
-                    <p className="text-sm mb-4">
-                      Price: ${item.price.toFixed(2)}
-                    </p>
-                  )}
+
                   <Button
                     size="sm"
                     onClick={() => addToList(item)}
                     disabled={!activeList}
-                    className="w-full"
+                    className="w-full gap-2"
                   >
-                    {activeList ? `Add to ${activeList.name}` : 'Create a list first'}
+                    <Plus className="h-4 w-4" />
+                    {activeList ? `Add to ${activeList.name}` : "Create a list first"}
                   </Button>
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
-      </main>
 
-      <CameraModal
-        open={showCameraModal}
-        onOpenChange={setShowCameraModal}
-        onProductDetected={handleProductDetected}
-      />
+        {/* Empty state */}
+        {searchResults.length === 0 && !searching && (
+          <div className="text-center py-12">
+            <ShoppingBasket className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Search for groceries</h3>
+            <p className="text-muted-foreground mb-4">
+              Try searching for "milk", "chicken", "chips", or any grocery item
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {["Milk", "Eggs", "Bread", "Chicken", "Bananas", "Chips"].map((term) => (
+                <Button
+                  key={term}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearchQuery(term);
+                    handleSearch(term);
+                  }}
+                >
+                  {term}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+      </main>
 
       <CreateListDialog
         open={showCreateListDialog}
