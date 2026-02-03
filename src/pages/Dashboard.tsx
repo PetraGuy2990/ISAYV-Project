@@ -23,6 +23,7 @@ import { retailers } from "@/data/mockGroceryData";
 const Dashboard = () => {
   const [showCreateListDialog, setShowCreateListDialog] = useState(false);
   const [showListDetail, setShowListDetail] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(true);
   const navigate = useNavigate();
 
   // Mock grocery lists hook
@@ -156,15 +157,22 @@ const Dashboard = () => {
                     : "Search items..."
                 }
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSearch();
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setShowSuggestions(true);
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSearch();
+                    setShowSuggestions(false);
+                  }
+                }}
+                onFocus={() => setShowSuggestions(true)}
                 className="pl-9 sm:pl-10 h-11 sm:h-12 text-base"
               />
               
               {/* Autocomplete Suggestions */}
-              {suggestions.length > 0 && (
+              {suggestions.length > 0 && showSuggestions && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 overflow-hidden max-h-60 overflow-y-auto">
                   {suggestions.map((suggestion) => (
                     <button
@@ -172,10 +180,16 @@ const Dashboard = () => {
                       onClick={() => {
                         setSearchQuery(suggestion.product.name);
                         handleSearch(suggestion.product.name);
+                        setShowSuggestions(false);
                       }}
-                      className="w-full px-3 py-3 sm:px-4 sm:py-2 text-left hover:bg-accent transition-colors text-sm active:bg-accent/80"
+                      className="w-full px-2 py-2 text-left hover:bg-accent transition-colors text-xs active:bg-accent/80 flex items-center gap-2"
                     >
-                      {suggestion.text}
+                      <img 
+                        src={suggestion.product.imageUrl || `https://via.placeholder.com/32x32/22c55e/ffffff?text=${suggestion.product.name.charAt(0)}`}
+                        alt=""
+                        className="w-6 h-6 rounded object-cover flex-shrink-0"
+                      />
+                      <span className="truncate">{suggestion.text}</span>
                     </button>
                   ))}
                 </div>
@@ -199,51 +213,36 @@ const Dashboard = () => {
           </p>
         </div>
 
-        {/* Search Results */}
+        {/* Search Results - Compact Grid */}
         {searchResults.length > 0 && (
-          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {searchResults.map((item) => (
-              <Card key={item.id} className="hover:shadow-lg transition-shadow overflow-hidden">
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-start justify-between mb-2 gap-2">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold line-clamp-2 text-sm sm:text-base">{item.name}</h3>
-                      <p className="text-xs sm:text-sm text-muted-foreground truncate">{item.brand}</p>
-                    </div>
-                    <Badge variant="secondary" className="text-[10px] sm:text-xs shrink-0">
-                      {item.category}
-                    </Badge>
-                  </div>
-                  
-                  <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3">{item.size}</p>
-
-                  {/* Price comparison grid */}
-                  <div className="grid grid-cols-2 gap-1 mb-2 sm:mb-3">
-                    {retailers.map((retailer) => {
-                      const price = item.retailerPrices[retailer.id];
-                      const isBest = item.bestRetailer === retailer.id;
-                      return (
-                        <div
-                          key={retailer.id}
-                          className={`px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-xs flex items-center justify-between ${
-                            isBest
-                              ? "bg-primary/10 border border-primary/30"
-                              : "bg-muted/50"
-                          }`}
-                        >
-                          <span className="font-medium">{retailer.logo}</span>
-                          <span className={isBest ? "font-bold text-primary" : ""}>
-                            {formatPrice(price)}
-                          </span>
-                        </div>
-                      );
-                    })}
+              <Card key={item.id} className="hover:shadow-md transition-shadow overflow-hidden">
+                <CardContent className="p-2">
+                  {/* Product Image */}
+                  <div className="relative mb-1.5">
+                    <img 
+                      src={item.imageUrl || `https://via.placeholder.com/80x80/22c55e/ffffff?text=${item.name.charAt(0)}`}
+                      alt={item.name}
+                      className="w-full h-16 sm:h-20 object-cover rounded"
+                    />
+                    {item.bestRetailer && (
+                      <Badge 
+                        className="absolute top-1 right-1 text-[8px] px-1 py-0"
+                        style={{ backgroundColor: getRetailerInfo(item.bestRetailer)?.color }}
+                      >
+                        {getRetailerInfo(item.bestRetailer)?.logo}
+                      </Badge>
+                    )}
                   </div>
 
+                  <h3 className="font-medium line-clamp-1 text-xs">{item.name}</h3>
+                  <p className="text-[10px] text-muted-foreground truncate">{item.brand} · {item.size}</p>
+
+                  {/* Best Price */}
                   {item.minPrice && (
-                    <p className="text-xs sm:text-sm font-semibold text-primary mb-2 sm:mb-3">
-                      Best: {formatPrice(item.minPrice)} at{" "}
-                      {getRetailerInfo(item.bestRetailer!)?.name}
+                    <p className="text-sm font-bold text-primary mt-1">
+                      {formatPrice(item.minPrice)}
                     </p>
                   )}
 
@@ -251,12 +250,10 @@ const Dashboard = () => {
                     size="sm"
                     onClick={() => addToList(item)}
                     disabled={!activeList}
-                    className="w-full gap-1.5 sm:gap-2 h-9 sm:h-10 text-xs sm:text-sm active:scale-[0.98]"
+                    className="w-full gap-1 h-7 text-[10px] mt-1.5 active:scale-[0.98]"
                   >
-                    <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    <span className="truncate">
-                      {activeList ? `Add to ${activeList.name}` : "Create list"}
-                    </span>
+                    <Plus className="h-3 w-3" />
+                    Add
                   </Button>
                 </CardContent>
               </Card>

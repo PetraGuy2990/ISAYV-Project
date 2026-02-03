@@ -10,8 +10,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { TrendingDown, Medal, AlertCircle, CheckCircle2 } from "lucide-react";
+import { TrendingDown, Medal, AlertCircle, CheckCircle2, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 interface RetailerTotal {
   name: string;
@@ -58,11 +59,18 @@ export const ComparisonSummaryDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-2 sm:space-y-3 mt-3 sm:mt-4">
+        <div className="space-y-2 mt-3">
           {sortedRetailers.map((retailer, index) => (
-            <div
+            <button
               key={retailer.name}
-              className="relative flex items-center justify-between p-3 sm:p-4 rounded-lg border transition-all"
+              onClick={() => {
+                toast.success(`Opening ${retailer.name} checkout...`, {
+                  description: `Your ${itemCount} items totaling $${retailer.total.toFixed(2)} will be added to your ${retailer.name} cart.`,
+                  duration: 3000,
+                });
+                onOpenChange(false);
+              }}
+              className="relative w-full flex items-center justify-between p-2.5 sm:p-3 rounded-lg border transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer text-left"
               style={{
                 backgroundColor: `${retailer.color}10`,
                 borderColor: index === 0 ? retailer.color : 'hsl(var(--border))',
@@ -71,50 +79,51 @@ export const ComparisonSummaryDialog = ({
             >
               {index === 0 && (
                 <div
-                  className="absolute -top-2.5 sm:-top-3 left-3 sm:left-4 bg-background px-1.5 sm:px-2 py-0.5 rounded-full border-2 flex items-center gap-1 text-[10px] sm:text-xs font-semibold"
+                  className="absolute -top-2 left-3 bg-background px-1.5 py-0.5 rounded-full border-2 flex items-center gap-1 text-[9px] font-semibold"
                   style={{ borderColor: retailer.color, color: retailer.color }}
                 >
-                  <Medal className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                  <Medal className="h-2.5 w-2.5" />
                   Best
                 </div>
               )}
 
-              <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-2">
                 <div
-                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-lg font-bold text-white flex-shrink-0"
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
                   style={{ backgroundColor: retailer.color }}
                 >
                   {index + 1}
                 </div>
                 <div className="min-w-0">
-                  <p className="font-semibold text-sm sm:text-base" style={{ color: retailer.color }}>
+                  <p className="font-semibold text-xs sm:text-sm" style={{ color: retailer.color }}>
                     {retailer.name}
                   </p>
-                  <div className="flex items-center gap-1 sm:gap-2 mt-0.5 flex-wrap">
+                  <div className="flex items-center gap-1 flex-wrap">
                     {retailer.complete ? (
-                      <span className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-0.5 sm:gap-1">
-                        <CheckCircle2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-green-500" />
-                        All available
+                      <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
+                        <CheckCircle2 className="h-2.5 w-2.5 text-green-500" />
+                        All items
                       </span>
                     ) : retailer.substituteCount && retailer.substituteCount > 0 ? (
-                      <span className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-0.5 sm:gap-1">
-                        <AlertCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-amber-500" />
+                      <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
+                        <AlertCircle className="h-2.5 w-2.5 text-amber-500" />
                         {retailer.substituteCount} subs
                       </span>
                     ) : null}
+                    {index > 0 && savingsValues[index] > 0 && (
+                      <span className="text-[9px] text-muted-foreground">
+                        +${savingsValues[index].toFixed(2)}
+                      </span>
+                    )}
                   </div>
-                  {index > 0 && savingsValues[index] > 0 && (
-                    <p className="text-[10px] sm:text-xs text-muted-foreground">
-                      +${savingsValues[index].toFixed(2)} more
-                    </p>
-                  )}
                 </div>
               </div>
 
-              <div className="text-right flex-shrink-0">
-                <p className="text-xl sm:text-2xl font-bold">${retailer.total.toFixed(2)}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-lg sm:text-xl font-bold">${retailer.total.toFixed(2)}</p>
+                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
-            </div>
+            </button>
           ))}
         </div>
 
