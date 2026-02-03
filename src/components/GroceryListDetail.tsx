@@ -174,7 +174,7 @@ export function GroceryListDetail({
                   <h3 className="text-xs sm:text-sm font-semibold text-muted-foreground mb-2 sm:mb-3 uppercase tracking-wide">
                     {category} ({groupedItems[category].length})
                   </h3>
-                  <div className="space-y-2 sm:space-y-3">
+                  <div className="space-y-1.5">
                     {groupedItems[category].map((item) => (
                       <BasketItemRow
                         key={item.id}
@@ -188,7 +188,7 @@ export function GroceryListDetail({
               ))}
             </div>
           ) : (
-            <div className="space-y-2 sm:space-y-3">
+            <div className="space-y-1.5">
               {items.map((item) => (
                 <BasketItemRow
                   key={item.id}
@@ -294,7 +294,7 @@ export function GroceryListDetail({
   );
 }
 
-// Basket Item Row Component
+// Compact Basket Item Row Component
 function BasketItemRow({
   item,
   onRemove,
@@ -313,44 +313,45 @@ function BasketItemRow({
   const minPrice = prices.length > 0 ? Math.min(...prices) : item.product.basePrice;
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors gap-3">
+    <div className="flex items-center gap-2 p-2 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+      {/* Product Image */}
+      <img 
+        src={item.product.imageUrl || `https://via.placeholder.com/40x40/22c55e/ffffff?text=${item.product.name.charAt(0)}`}
+        alt={item.product.name}
+        className="w-10 h-10 rounded object-cover flex-shrink-0"
+      />
+      
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm sm:text-base truncate">{item.product.name}</p>
-        <div className="flex items-center gap-1.5 sm:gap-2 mt-1 flex-wrap">
-          <Badge variant="secondary" className="text-[10px] sm:text-xs">
-            {item.product.brand}
-          </Badge>
-          {item.product.size && (
-            <span className="text-[10px] sm:text-sm text-muted-foreground">{item.product.size}</span>
-          )}
-          <span className="text-xs sm:text-sm font-medium text-primary">
-            ${minPrice.toFixed(2)} ea
-          </span>
+        <p className="font-medium text-xs truncate">{item.product.name}</p>
+        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <span>{item.product.brand}</span>
+          <span>·</span>
+          <span className="font-medium text-primary">${minPrice.toFixed(2)}</span>
         </div>
       </div>
 
-      <div className="flex items-center justify-between sm:justify-end gap-2">
-        <div className="flex items-center border rounded-md">
+      <div className="flex items-center gap-1">
+        <div className="flex items-center border rounded">
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 sm:h-8 sm:w-8 active:bg-accent"
+            className="h-6 w-6 text-xs active:bg-accent"
             onClick={() => onUpdateQuantity(item.quantity - 1)}
           >
             -
           </Button>
-          <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+          <span className="w-5 text-center text-xs font-medium">{item.quantity}</span>
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 sm:h-8 sm:w-8 active:bg-accent"
+            className="h-6 w-6 text-xs active:bg-accent"
             onClick={() => onUpdateQuantity(item.quantity + 1)}
           >
             +
           </Button>
         </div>
-        <Button variant="ghost" size="icon" onClick={onRemove} className="h-9 w-9">
-          <Trash2 className="h-4 w-4 text-destructive" />
+        <Button variant="ghost" size="icon" onClick={onRemove} className="h-6 w-6">
+          <Trash2 className="h-3 w-3 text-destructive" />
         </Button>
       </div>
     </div>
