@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Search, User as UserIcon, ShoppingBasket, Plus, Sparkles } from "lucide-react";
+import { Search, User as UserIcon, ShoppingBasket, Plus, Leaf, Apple } from "lucide-react";
 import { SearchModeToggle } from "@/components/SearchModeToggle";
 import { GroceryListsBar } from "@/components/GroceryListsBar";
 import { CreateListDialog } from "@/components/CreateListDialog";
@@ -81,11 +81,11 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex flex-col">
       {/* Demo Mode Banner */}
-      <div className="bg-primary/10 border-b border-primary/20 px-3 py-1.5 sm:px-4 sm:py-2">
+      <div className="bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border-b border-primary/20 px-3 py-1.5 sm:px-4 sm:py-2">
         <div className="container mx-auto flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
-          <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+          <Leaf className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
           <span className="text-primary font-medium">Demo Mode</span>
-          <span className="text-muted-foreground hidden xs:inline">– Simulated data</span>
+          <span className="text-muted-foreground hidden xs:inline">– Fresh savings await! 🥬</span>
         </div>
       </div>
 
@@ -267,10 +267,14 @@ const Dashboard = () => {
         {/* Empty state */}
         {searchResults.length === 0 && !searching && (
           <div className="text-center py-8 sm:py-12 px-4">
-            <ShoppingBasket className="h-12 w-12 sm:h-16 sm:w-16 mx-auto text-muted-foreground/50 mb-3 sm:mb-4" />
-            <h3 className="text-lg sm:text-xl font-semibold mb-2">Search for groceries</h3>
+            <div className="flex justify-center gap-2 mb-3 sm:mb-4">
+              <Apple className="h-10 w-10 sm:h-14 sm:w-14 text-destructive/60 animate-bounce-subtle" />
+              <ShoppingBasket className="h-12 w-12 sm:h-16 sm:w-16 text-primary/60" />
+              <Leaf className="h-10 w-10 sm:h-14 sm:w-14 text-primary/60 animate-bounce-subtle" style={{ animationDelay: '0.5s' }} />
+            </div>
+            <h3 className="text-lg sm:text-xl font-semibold mb-2">Find the freshest deals</h3>
             <p className="text-sm sm:text-base text-muted-foreground mb-4">
-              Try "milk", "chicken", "chips" or any item
+              Search for milk, eggs, produce, or any grocery item
             </p>
             <div className="flex flex-wrap justify-center gap-2">
               {["Milk", "Eggs", "Bread", "Chicken", "Bananas", "Chips"].map((term) => (
