@@ -102,10 +102,18 @@ export default {
         },
         "glow": {
           "0%, 100%": {
-            boxShadow: "0 0 20px hsl(183 80% 64% / 0.4)"
+            boxShadow: "0 0 20px hsl(142 55% 45% / 0.4)"
           },
           "50%": {
-            boxShadow: "0 0 40px hsl(183 80% 64% / 0.6)"
+            boxShadow: "0 0 40px hsl(142 55% 45% / 0.6)"
+          }
+        },
+        "bounce-subtle": {
+          "0%, 100%": {
+            transform: "translateY(0)"
+          },
+          "50%": {
+            transform: "translateY(-3px)"
           }
         }
       },
@@ -115,6 +123,7 @@ export default {
         "fade-in": "fade-in 0.5s ease-out",
         "fade-up": "fade-up 0.6s ease-out",
         "glow": "glow 2s ease-in-out infinite",
+        "bounce-subtle": "bounce-subtle 2s ease-in-out infinite",
       },
     },
   },

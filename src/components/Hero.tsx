@@ -39,13 +39,13 @@ const Hero = () => {
 
           {/* Hero heading */}
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Your All-in-One Grocery Experience
+            <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
+              Fresh Savings on Every Trip
             </span>
           </h1>
 
           <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Save money on every grocery trip. Compare prices across retailers, find the best deals, and earn rewards—all in one place.
+            Compare grocery prices across Walmart, Costco, Target & Kroger. Find the freshest deals and save big on your weekly shop.
           </p>
 
           {/* Email signup form */}
