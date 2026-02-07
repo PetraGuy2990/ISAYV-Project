@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Search, User as UserIcon, ShoppingBasket, Plus, Leaf, Apple } from "lucide-react";
+import { Search, User as UserIcon, ShoppingBasket, Plus, Leaf, Apple, Tag } from "lucide-react";
 import { SearchModeToggle } from "@/components/SearchModeToggle";
 import { GroceryListsBar } from "@/components/GroceryListsBar";
 import { CreateListDialog } from "@/components/CreateListDialog";
@@ -185,7 +185,7 @@ const Dashboard = () => {
                       className="w-full px-2 py-2 text-left hover:bg-accent transition-colors text-xs active:bg-accent/80 flex items-center gap-2"
                     >
                       <img 
-                        src={suggestion.product.imageUrl || `https://via.placeholder.com/32x32/22c55e/ffffff?text=${suggestion.product.name.charAt(0)}`}
+                        src={suggestion.product.imageUrl || `https://images.unsplash.com/photo-1542838132-92c53300491e?w=32&h=32&fit=crop`}
                         alt=""
                         className="w-6 h-6 rounded object-cover flex-shrink-0"
                       />
@@ -217,15 +217,23 @@ const Dashboard = () => {
         {searchResults.length > 0 && (
           <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {searchResults.map((item) => (
-              <Card key={item.id} className="hover:shadow-md transition-shadow overflow-hidden">
+              <Card key={item.id} className={`hover:shadow-md transition-shadow overflow-hidden ${
+                searchMode === 'brand' && item.isBrandMatch ? 'ring-2 ring-accent/60 bg-accent/5' : ''
+              }`}>
                 <CardContent className="p-2">
                   {/* Product Image */}
                   <div className="relative mb-1.5">
                     <img 
-                      src={item.imageUrl || `https://via.placeholder.com/80x80/22c55e/ffffff?text=${item.name.charAt(0)}`}
+                      src={item.imageUrl || `https://images.unsplash.com/photo-1542838132-92c53300491e?w=200&h=200&fit=crop`}
                       alt={item.name}
                       className="w-full h-16 sm:h-20 object-cover rounded"
                     />
+                    {searchMode === 'brand' && item.isBrandMatch && (
+                      <Badge className="absolute top-1 left-1 text-[8px] px-1 py-0 bg-accent text-accent-foreground gap-0.5">
+                        <Tag className="h-2 w-2" />
+                        Brand
+                      </Badge>
+                    )}
                     {item.bestRetailer && (
                       <Badge 
                         className="absolute top-1 right-1 text-[8px] px-1 py-0"
@@ -237,7 +245,9 @@ const Dashboard = () => {
                   </div>
 
                   <h3 className="font-medium line-clamp-1 text-xs">{item.name}</h3>
-                  <p className="text-[10px] text-muted-foreground truncate">{item.brand} · {item.size}</p>
+                  <p className={`text-[10px] truncate ${
+                    searchMode === 'brand' && item.isBrandMatch ? 'text-accent font-semibold' : 'text-muted-foreground'
+                  }`}>{item.brand} · {item.size}</p>
 
                   {/* Best Price */}
                   {item.minPrice && (

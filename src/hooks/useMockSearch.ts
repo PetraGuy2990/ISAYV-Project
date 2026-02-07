@@ -16,6 +16,7 @@ export interface SearchResult extends MockProduct {
   minPrice: number | null;
   retailerPrices: Record<RetailerId, number | null>;
   bestRetailer: RetailerId | null;
+  isBrandMatch: boolean;
 }
 
 export function useMockSearch() {
@@ -72,11 +73,9 @@ export function useMockSearch() {
           kroger: pricing?.kroger.price ?? null,
         };
 
-        // Find minimum price
         const prices = Object.values(retailerPrices).filter((p): p is number => p !== null);
         const minPrice = prices.length > 0 ? Math.min(...prices) : null;
         
-        // Find best retailer
         let bestRetailer: RetailerId | null = null;
         if (minPrice !== null) {
           for (const [retailer, price] of Object.entries(retailerPrices)) {
@@ -87,11 +86,14 @@ export function useMockSearch() {
           }
         }
 
+        const isBrandMatch = product.brand.toLowerCase().includes(lowerQuery);
+
         return {
           ...product,
           minPrice,
           retailerPrices,
           bestRetailer,
+          isBrandMatch,
         };
       });
 
@@ -103,11 +105,19 @@ export function useMockSearch() {
           return a.minPrice - b.minPrice;
         });
       } else {
-        // Brand mode: prioritize exact brand matches
+        // Brand mode: strongly prioritize brand matches, then name relevance
         resultsWithPricing.sort((a, b) => {
-          const aMatch = a.brand.toLowerCase().includes(lowerQuery) ? 0 : 1;
-          const bMatch = b.brand.toLowerCase().includes(lowerQuery) ? 0 : 1;
-          if (aMatch !== bMatch) return aMatch - bMatch;
+          // Exact brand name match first
+          const aExact = a.brand.toLowerCase() === lowerQuery ? 0 : 1;
+          const bExact = b.brand.toLowerCase() === lowerQuery ? 0 : 1;
+          if (aExact !== bExact) return aExact - bExact;
+          
+          // Then partial brand match
+          const aBrand = a.isBrandMatch ? 0 : 1;
+          const bBrand = b.isBrandMatch ? 0 : 1;
+          if (aBrand !== bBrand) return aBrand - bBrand;
+          
+          // Then by price within same brand relevance
           return (a.minPrice || 999) - (b.minPrice || 999);
         });
       }
